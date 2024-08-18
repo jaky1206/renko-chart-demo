@@ -5,7 +5,7 @@ import numpy as np
 from matplotlib.widgets import Slider
 
 # Load data from the file
-df = pd.read_csv('renko_series_with_moving_average.txt')
+df = pd.read_csv(r'.\data\renko_series_with_moving_average.txt')
 
 # Strip any leading or trailing whitespace from the column names
 df.columns = df.columns.str.strip()

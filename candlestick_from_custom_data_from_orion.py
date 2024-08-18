@@ -4,7 +4,7 @@ import matplotlib.dates as mdates
 from matplotlib.widgets import Button
 
 # Load stock price data from a text file
-df = pd.read_csv('candlestick_series.txt')
+df = pd.read_csv(r'.\data\candlestick_series.txt')
 
 # Clean column names (strip leading/trailing whitespace)
 df.columns = df.columns.str.strip()
