@@ -2,6 +2,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import numpy as np
+from matplotlib.widgets import Slider
 
 # Load data from the file
 df = pd.read_csv('renko_series.txt')
@@ -12,6 +13,7 @@ df.columns = df.columns.str.strip()
 # Ensure that the necessary columns exist
 required_columns = ['StartDateTime', 'EndDateTime', 'StartPrice', 'EndPrice', 'Color']
 missing_columns = [col for col in required_columns if col not in df.columns]
+
 if missing_columns:
     print(f"Error: Missing columns: {missing_columns}")
 else:
@@ -56,4 +58,18 @@ else:
     # Add grid, legend, and show the plot
     axes.grid(True)
     axes.legend()
+
+    # Slider functionality
+    axcolor = 'lightgoldenrodyellow'
+    axpos = plt.axes([0.2, 0.01, 0.65, 0.03], facecolor=axcolor)
+
+    spos = Slider(axpos, 'Pos', 0, len(df) - 10, valinit=0, valstep=1)
+
+    def update(val):
+        pos = spos.val
+        axes.set_xlim([pos, pos + 10])
+        fig.canvas.draw_idle()
+
+    spos.on_changed(update)
+
     plt.show()
