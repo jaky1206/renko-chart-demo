@@ -41,3 +41,7 @@ pip list --format=freeze > requirements.txt
 ## Reference
 1. [chranga/renkocharts](https://github.com/chranga/renkocharts)
 2. [renko1 - Google Colab](https://colab.research.google.com/drive/1qHq4sjCf8zodROUDrtYFYeMiX6AvwDQQ?usp=sharing)
+3. [geek for geeks] (https://www.geeksforgeeks.org/how-to-create-a-candlestick-chart-in-matplotlib/)
+
+
+[![built with Codeium](https://codeium.com/badges/main)](https://codeium.com)
