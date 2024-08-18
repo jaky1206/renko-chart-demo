@@ -39,11 +39,19 @@ else:
     index = 0
     for _, row in df.iterrows():
         if row['Color'] == 'G':  # Green for upward trend
-            renko = patches.Rectangle((index, row['StartPrice']), 1, row['EndPrice'] - row['StartPrice'], edgecolor='black', facecolor='green', alpha=0.7)
-            index += 1  # Increment index after placing the Renko bar
+            if row['EndPrice'] - row['StartPrice'] <= 5:
+                renko = patches.Rectangle((index, row['StartPrice']), 1, row['EndPrice'] - row['StartPrice'], edgecolor='green', facecolor='green', alpha=0.7)
+                index += 1  # Increment index after placing the Renko bar
+            elif row['EndPrice'] - row['StartPrice'] > 5:
+                renko = patches.Rectangle((index, row['StartPrice']+ 5), 1, 5, edgecolor='green', facecolor='green', alpha=0.7)
+                index += 1  # Increment index after placing the Renko bar
         elif row['Color'] == 'R':  # Red for downward trend
-            renko = patches.Rectangle((index, row['StartPrice']), 1, row['EndPrice'] - row['StartPrice'], edgecolor='black', facecolor='red', alpha=0.7)
-            index += 1  # Increment index after placing the Renko bar
+            if row['StartPrice'] - row['EndPrice'] <= 5:
+                renko = patches.Rectangle((index, row['StartPrice']), 1, row['EndPrice'] - row['StartPrice'], edgecolor='red', facecolor='red', alpha=0.7)
+                index += 1  # Increment index after placing the Renko bar
+            elif row['StartPrice'] - row['EndPrice'] > 5:
+                renko = patches.Rectangle((index, row['EndPrice']), 1, 5, edgecolor='red', facecolor='red', alpha=0.7)
+                index += 1  # Increment index after placing the Renko bar
         axes.add_patch(renko)
 
     # Plot the moving average, median, and linear regression lines
