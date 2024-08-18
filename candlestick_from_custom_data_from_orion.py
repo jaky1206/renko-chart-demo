@@ -45,4 +45,7 @@ plt.xlabel('DateTime')
 plt.ylabel('Price')
 plt.title('Candlestick Chart')
 
+# Resize the plot to fit the window
+plt.tight_layout()
+
 plt.show()
