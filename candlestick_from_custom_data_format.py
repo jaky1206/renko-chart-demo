@@ -2,16 +2,15 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from matplotlib.widgets import Button
-from matplotlib.dates import date2num
 
-# Load stock price data from a CSV string (for demonstration purposes)
+# Load stock price data from a text file
 df = pd.read_csv(r'.\data\candlestick_series.txt')
 
 # Clean column names (strip leading/trailing whitespace)
 df.columns = df.columns.str.strip()
 
 # Create a datetime column by combining 'Date' and 'Time'
-df['DateTime'] = pd.to_datetime(df['Date'] + ' ' + df['Time'], format='%m/%d/%Y %H:%M:%S')
+df['DateTime'] = pd.to_datetime(df['Date'] + ' ' + df['Time'])
 
 # Set datetime as the index
 df.set_index('DateTime', inplace=True)
@@ -27,16 +26,11 @@ if missing_columns:
 # Create a new figure
 fig, ax = plt.subplots(figsize=(12, 8))
 
-# Convert index to numeric values for plotting
-df['DateNum'] = date2num(df.index)
-
 # Plot candlestick bars
-width = 0.005  # Width of the candlestick bars
 for i, row in df.iterrows():
     color = 'green' if row['Close'] >= row['Open'] else 'red'
-    ax.plot([row['DateNum'], row['DateNum']], [row['Low'], row['High']], color=color, linewidth=1.5)  # High-low line
-    ax.plot([row['DateNum'] - width, row['DateNum'] - width], [row['Open'], row['Close']], color=color, linewidth=5)  # Open-close bar
-    ax.plot([row['DateNum'] + width, row['DateNum'] + width], [row['Open'], row['Close']], color=color, linewidth=5)  # Open-close bar
+    ax.plot([i, i], [row['Low'], row['High']], color=color, linewidth=1.5)  # High-low line
+    ax.plot([i, i], [row['Open'], row['Close']], color=color, linewidth=5)  # Open-close bar
 
 # Set x-axis labels and formatting
 ax.xaxis_date()
@@ -54,27 +48,27 @@ ax.set_title('Candlestick Chart')
 
 # Create a secondary y-axis to plot volume
 ax2 = ax.twinx()
-volume_bars = ax2.bar(df.index, df['Volume'], color='gray', alpha=0.3, width=0.01, visible=False)  # Adjusted width
+volume_bars = ax2.bar(df.index, df['Volume'], color='gray', alpha=0.3, width=0.001, visible=False)  # Initially hidden
 
 # Set secondary y-axis label
 ax2.set_ylabel('Volume')
 
-# # Function to toggle volume bars on or off
-# def toggle_volume(event):
-#     visible = volume_bars[0].get_visible()
-#     for bar in volume_bars:
-#         bar.set_visible(not visible)
-#     # Update button label
-#     if visible:
-#         toggle_button.label.set_text("Show Volume")
-#     else:
-#         toggle_button.label.set_text("Hide Volume")
-#     plt.draw()
+# Function to toggle volume bars on or off
+def toggle_volume(event):
+    visible = volume_bars[0].get_visible()
+    for bar in volume_bars:
+        bar.set_visible(not visible)
+    # Update button label
+    if visible:
+        toggle_button.label.set_text("Show Volume")
+    else:
+        toggle_button.label.set_text("Hide Volume")
+    plt.draw()
 
-# # Create a button for toggling volume
-# button_ax = plt.axes([0.85, 0.01, 0.1, 0.05])  # Position of the button (x, y, width, height)
-# toggle_button = Button(button_ax, 'Show Volume')
-# toggle_button.on_clicked(toggle_volume)
+# Create a button for toggling volume
+button_ax = plt.axes([0.85, 0.01, 0.1, 0.05])  # Position of the button (x, y, width, height)
+toggle_button = Button(button_ax, 'Show Volume')
+toggle_button.on_clicked(toggle_volume)
 
 # Resize the plot to fit the window
 plt.tight_layout()
