@@ -5,7 +5,7 @@ from matplotlib.widgets import Button
 import matplotlib.patches as patches
 
 # Load stock price data from a text file
-df = pd.read_csv(r'.\data\candlestick_series_small.txt')
+df = pd.read_csv(r'.\data\candlestick_series.txt')
 
 # Clean column names (strip leading/trailing whitespace)
 df.columns = df.columns.str.strip()
@@ -31,7 +31,7 @@ df.sort_index(inplace=True)
 fig, ax = plt.subplots(figsize=(14, 8))
 
 # Define the width of candlestick bars (adjust as needed)
-width = pd.Timedelta(seconds=5)  # Width of candlestick bars
+width = pd.Timedelta(seconds=4)  # Width of candlestick bars
 width_days = width / pd.Timedelta(days=1)  # Convert width to days for plotting
 
 # Plot candlestick bars
