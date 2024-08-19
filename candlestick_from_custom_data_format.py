@@ -5,7 +5,7 @@ from matplotlib.widgets import Button
 import matplotlib.patches as patches
 
 # Load stock price data from a text file
-df = pd.read_csv(r'.\data\candlestick_series.txt')
+df = pd.read_csv(r'.\data\candlestick_series_medium.txt')
 
 # Clean column names (strip leading/trailing whitespace)
 df.columns = df.columns.str.strip()
