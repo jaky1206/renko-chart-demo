@@ -2,15 +2,16 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from matplotlib.widgets import Button
+import matplotlib.patches as patches
 
 # Load stock price data from a text file
-df = pd.read_csv(r'.\data\candlestick_series.txt')
+df = pd.read_csv(r'.\data\candlestick_series_small.txt')
 
 # Clean column names (strip leading/trailing whitespace)
 df.columns = df.columns.str.strip()
 
 # Create a datetime column by combining 'Date' and 'Time'
-df['DateTime'] = pd.to_datetime(df['Date'] + ' ' + df['Time'])
+df['DateTime'] = pd.to_datetime(df['Date'] + ' ' + df['Time'], format='%m/%d/%Y %H:%M:%S')
 
 # Set datetime as the index
 df.set_index('DateTime', inplace=True)
@@ -23,32 +24,55 @@ if missing_columns:
     print(f"Error: Missing columns: {missing_columns}")
     exit(1)
 
+# Sort data by datetime
+df.sort_index(inplace=True)
+
 # Create a new figure
-fig, ax = plt.subplots(figsize=(12, 8))
+fig, ax = plt.subplots(figsize=(14, 8))
+
+# Define the width of candlestick bars (adjust as needed)
+width = pd.Timedelta(seconds=5)  # Width of candlestick bars
+width_days = width / pd.Timedelta(days=1)  # Convert width to days for plotting
 
 # Plot candlestick bars
-for i, row in df.iterrows():
+for timestamp, row in df.iterrows():
     color = 'green' if row['Close'] >= row['Open'] else 'red'
-    ax.plot([i, i], [row['Low'], row['High']], color=color, linewidth=1.5)  # High-low line
-    ax.plot([i, i], [row['Open'], row['Close']], color=color, linewidth=5)  # Open-close bar
+    
+    # Plot the high-low line
+    ax.plot([timestamp, timestamp], [row['Low'], row['High']], color=color, linewidth=1.5)  
+    
+    # Plot the open-close rectangle
+    open_close_rect = patches.Rectangle(
+        (timestamp - pd.Timedelta(seconds=width.total_seconds() / 2), min(row['Open'], row['Close'])),
+        width,
+        abs(row['Close'] - row['Open']),
+        color=color,
+        edgecolor='none'  # Remove edges from the rectangle
+    )
+    ax.add_patch(open_close_rect)
 
 # Set x-axis labels and formatting
 ax.xaxis_date()
 ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d %H:%M:%S'))
 plt.xticks(rotation=45, ha='right')
 
+# Adjust x-axis limits to show all data with some padding
+ax.set_xlim(df.index.min() - pd.Timedelta(minutes=10), df.index.max() + pd.Timedelta(minutes=10))
+
 # Set y-axis limits
-ax.set_ylim(df['Low'].min() - 5, df['High'].max() + 5)
+ax.set_ylim(df['Low'].min() - 10, df['High'].max() + 10)
 
 # Add grid and labels
-ax.grid(True, linestyle='--')
+ax.grid(True, linestyle='--', linewidth=0.5)  # Make grid lines lighter
 ax.set_xlabel('DateTime')
 ax.set_ylabel('Price')
 ax.set_title('Candlestick Chart')
 
 # Create a secondary y-axis to plot volume
 ax2 = ax.twinx()
-volume_bars = ax2.bar(df.index, df['Volume'], color='gray', alpha=0.3, width=0.001, visible=False)  # Initially hidden
+# Adjust volume bars width to match candlestick bars
+volume_width = width.total_seconds() / (60 * 60 * 24)  # Convert width to days
+volume_bars = ax2.bar(df.index, df['Volume'], color='gray', alpha=0.3, width=volume_width, visible=False)
 
 # Set secondary y-axis label
 ax2.set_ylabel('Volume')
@@ -70,7 +94,7 @@ button_ax = plt.axes([0.85, 0.01, 0.1, 0.05])  # Position of the button (x, y, w
 toggle_button = Button(button_ax, 'Show Volume')
 toggle_button.on_clicked(toggle_volume)
 
-# Resize the plot to fit the window
-plt.tight_layout()
+# Resize the plot to fit the window and remove extra whitespace
+plt.tight_layout(pad=2.0)  # Add padding to avoid overlap
 
 plt.show()
