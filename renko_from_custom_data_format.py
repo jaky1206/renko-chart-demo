@@ -1,81 +1,70 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
-import numpy as np
 from matplotlib.widgets import Slider
+import matplotlib.dates as mdates
 
 # Load data from the file
-df = pd.read_csv(r'.\data\renko_series_with_moving_average.txt')
+file_path = r'.\data\NQ-Aug11-Aug16-Renko(date).csv'
+data = pd.read_csv(file_path)
 
-# Strip any leading or trailing whitespace from the column names
-df.columns = df.columns.str.strip()
+# Drop any rows with NaT values in Time_Start
+cleaned_data = data.dropna(subset=['Time'])
 
-# Ensure that the necessary columns exist
-required_columns = ['StartDateTime', 'EndDateTime', 'StartPrice', 'EndPrice', 'Color']
-missing_columns = [col for col in required_columns if col not in df.columns]
+# Convert Time_Start to datetime
+cleaned_data['Time'] = pd.to_datetime(cleaned_data['Time'], format='%H:%M:%S')
 
+# Set up the plot
+fig, ax = plt.subplots(figsize=(14, 7))
+plt.subplots_adjust(bottom=0.25)  # Adjust bottom for the slider
 
-# if missing_columns throw error and return
-if missing_columns:
-    print(f"Error: Missing columns: {missing_columns}")
-    exit(1)
+# Define the brick size
+brick_size = 5  # 5 points per brick
 
+# Plot the Renko bricks
+for index, row in cleaned_data.iterrows():
+    color = 'green' if row['Renko_Open'] < row['Renko_Close'] else 'red'
+    # Determine the brick position
+    position = index  # Use the index for spacing on the x-axis
+    # Create the brick
+    rect = patches.Rectangle(
+        (position, min(row['Renko_Open'], row['Renko_Close'])),  # Bottom-left corner
+        1,  # Uniform width
+        abs(row['Renko_Close'] - row['Renko_Open']),  # Height (price movement)
+        linewidth=1,
+        edgecolor='black',
+        facecolor=color
+    )
+    ax.add_patch(rect)
 
-# Convert the price columns to numeric
-df['StartPrice'] = pd.to_numeric(df['StartPrice'], errors='coerce')
-df['EndPrice'] = pd.to_numeric(df['EndPrice'], errors='coerce')
-df['MovingAverage'] = pd.to_numeric(df['MovingAverage'], errors='coerce')
+# Set the limits for the axes
+ax.set_xlim(0, len(cleaned_data))
+ax.set_ylim(cleaned_data[['Renko_Open', 'Renko_Close']].min().min() - brick_size, 
+            cleaned_data[['Renko_Open', 'Renko_Close']].max().max() + brick_size)
 
-# Create the Renko bars
-def plot_renko_chart(df):
-    fig, ax1 = plt.subplots(figsize=(12, 8))
-    plt.subplots_adjust(bottom=0.3)
+# Set labels and title
+ax.set_xlabel('Index')
+ax.set_ylabel('Price')
+ax.set_title('Renko Chart')
 
-    index = 0
-    for _, row in df.iterrows():
-        if pd.notna(row['StartPrice']) and pd.notna(row['EndPrice']):
-            if row['Color'] == 'G':  # Green for upward trend
-                if row['EndPrice'] - row['StartPrice'] <= 5:
-                    renko = patches.Rectangle((index, row['StartPrice']), 1, row['EndPrice'] - row['StartPrice'], edgecolor='green', facecolor='green', alpha=0.7)
-                    index += 1  # Increment index after placing the Renko bar
-                elif row['EndPrice'] - row['StartPrice'] > 5:
-                    renko = patches.Rectangle((index, row['StartPrice']+ 5), 1, 5, edgecolor='green', facecolor='green', alpha=0.7)
-                    index += 1  # Increment index after placing the Renko bar
-            elif row['Color'] == 'R':  # Red for downward trend
-                if row['StartPrice'] - row['EndPrice'] <= 5:
-                    renko = patches.Rectangle((index, row['StartPrice']), 1, row['EndPrice'] - row['StartPrice'], edgecolor='red', facecolor='red', alpha=0.7)
-                    index += 1  # Increment index after placing the Renko bar
-                elif row['StartPrice'] - row['EndPrice'] > 5:
-                    renko = patches.Rectangle((index, row['EndPrice']), 1, 5, edgecolor='red', facecolor='red', alpha=0.7)
-                    index += 1  # Increment index after placing the Renko bar
-            ax1.add_patch(renko)
+# Adjust x-axis to show time
+ax.set_xticks(range(len(cleaned_data)))
+ax.set_xticklabels(cleaned_data['Time'].dt.strftime('%H:%M:%S'), rotation=45, ha='right')
 
-    ax1.plot(range(len(df)), df['MovingAverage'], color='blue', label='Moving Average')
-    ax1.legend()
+# Add a slider for scrolling through the chart
+ax_slider = plt.axes([0.1, 0.1, 0.8, 0.03], facecolor='lightgoldenrodyellow')
+slider = Slider(ax_slider, 'Scroll', 0, len(cleaned_data) - 1, valinit=0, valstep=1)
 
-    ax1.set_xticks(range(len(df)))
-    ax1.set_xticklabels(df['EndDateTime'], rotation=45, ha="right")
-    for label in ax1.get_xticklabels():
-        label.set_fontstyle('italic')
+# Update function to control the visible range of the Renko chart
+def update(val):
+    pos = int(slider.val)
+    ax.set_xlim(pos, pos + 10)
+    fig.canvas.draw_idle()
 
-    initial_position = len(df) - 100 if len(df) > 100 else 0
-    ax1.set_xlim(initial_position, initial_position + 50)
-    ax1.set_ylim(df['StartPrice'].min() - 10, df['EndPrice'].max() + 10)
+slider.on_changed(update)
 
-    ax1.set_ylabel('Price')
-    ax1.set_title('Renko Chart')
-    ax1.grid(True, linestyle='--')
+# Show grid
+ax.grid(True)
 
-    ax_slider = plt.axes([0.1, 0.05, 0.8, 0.03], facecolor='lightgoldenrodyellow')
-    slider = Slider(ax_slider, 'Scroll', 0, len(df) - 50, valinit=initial_position, valstep=1)
-
-    def update(val):
-        pos = slider.val
-        ax1.set_xlim([pos, pos + 50])
-        fig.canvas.draw_idle()
-
-    slider.on_changed(update)
-    plt.show()
-
-# Call the function to create the Renko chart
-plot_renko_chart(df)
+# Show the plot
+plt.show()
