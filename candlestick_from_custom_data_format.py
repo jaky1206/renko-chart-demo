@@ -46,8 +46,8 @@ for timestamp, row in df.iterrows():
         (timestamp - pd.Timedelta(seconds=width.total_seconds() / 2), min(row['Open'], row['Close'])),
         width,
         abs(row['Close'] - row['Open']),
-        color=color,
-        edgecolor='none'  # Remove edges from the rectangle
+        edgecolor=color,
+        facecolor=color
     )
     ax.add_patch(open_close_rect)
 
@@ -95,6 +95,6 @@ toggle_button = Button(button_ax, 'Show Volume')
 toggle_button.on_clicked(toggle_volume)
 
 # Resize the plot to fit the window and remove extra whitespace
-plt.tight_layout(pad=2.0)  # Add padding to avoid overlap
+plt.gcf().set_constrained_layout_pads(w_pad=2.0, h_pad=2.0)
 
 plt.show()
