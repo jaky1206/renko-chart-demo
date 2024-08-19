@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from matplotlib.widgets import Button, Slider
 import matplotlib.patches as patches
+import numpy as np
 
 # Function to load and prepare data
 def load_data(file_path):
@@ -24,17 +25,29 @@ def load_data(file_path):
 # Function to plot the candlestick chart
 def plot_candlestick(df, ax):
     width = pd.Timedelta(seconds=4)
-    for timestamp, row in df.iterrows():
-        color = 'green' if row['Close'] >= row['Open'] else 'red'
-        ax.plot([timestamp, timestamp], [row['Low'], row['High']], color=color, linewidth=1.5)
-        open_close_rect = patches.Rectangle(
-            (timestamp - pd.Timedelta(seconds=width.total_seconds() / 2), min(row['Open'], row['Close'])),
+    width_seconds = width.total_seconds()
+    timestamps = df.index.to_pydatetime()
+    opens = df['Open'].values
+    highs = df['High'].values
+    lows = df['Low'].values
+    closes = df['Close'].values
+    colors = np.where(closes >= opens, 'green', 'red')
+
+    # Plot the high-low lines
+    for i in range(len(timestamps)):
+        ax.plot([timestamps[i], timestamps[i]], [lows[i], highs[i]], color=colors[i], linewidth=1.5)
+    
+    # Plot the open-close rectangles
+    for i in range(len(timestamps)):
+        rect = patches.Rectangle(
+            (timestamps[i] - pd.Timedelta(seconds=width_seconds / 2), min(opens[i], closes[i])),
             width,
-            abs(row['Close'] - row['Open']),
-            edgecolor=color,
-            facecolor=color
+            abs(closes[i] - opens[i]),
+            edgecolor=colors[i],
+            facecolor=colors[i]
         )
-        ax.add_patch(open_close_rect)
+        ax.add_patch(rect)
+
     ax.xaxis_date()
     ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d %H:%M:%S'))
     ax.xaxis.set_major_locator(mdates.AutoDateLocator())
@@ -62,6 +75,7 @@ def update(val, ax, df, initial_range):
 # Main plotting function
 def create_plot(file_path):
     df = load_data(file_path)
+    
     fig, ax = plt.subplots(figsize=(14, 8))
     plt.subplots_adjust(bottom=0.35)
     
