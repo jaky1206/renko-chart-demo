@@ -1,4 +1,4 @@
-# Renko Chart Demo
+# Stock Charts Demo
 This project provides a demo for generating Renko charts, a type of financial chart that uses price movement rather than standardized time intervals to create bars. This allows for a clear visualization of trends in stock prices.
 
 ## Table of Contents
