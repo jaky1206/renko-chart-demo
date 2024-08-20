@@ -10,11 +10,13 @@ conda create -n stock-charts-demo
 conda activate stock-charts-demo
 
 ### export configuration to a file
-conda env export > stock-charts-demo.yml
+conda env export > requirements.yml
 
 ### create a new environment from config file
 conda env create  -f requirements.yml
 
+### remove environment
+conda env remove --name myenv
 
 ## PIP related commads
 
