@@ -87,11 +87,11 @@ Alternatively, you can use pip to set up the environment:
 2. [Renko Chart Demo on Google Colab.](https://colab.research.google.com/drive/1qHq4sjCf8zodROUDrtYFYeMiX6AvwDQQ?usp=sharing)
 3. [How to Create a Candlestick Chart in Matplotlib - A tutorial from GeeksforGeeks on creating financial charts using matplotlib.](https://www.geeksforgeeks.org/how-to-create-a-candlestick-chart-in-matplotlib)
 
-## 
+## Tech Stack
 [![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)](https://www.python.org/)
 [![Matplotlib](https://img.shields.io/badge/Matplotlib-%23ffffff.svg?style=for-the-badge&logo=Matplotlib&logoColor=black)](https://matplotlib.org/)
-[![ChatGPT](https://img.shields.io/badge/chatGPT-74aa9c?style=for-the-badge&logo=openai&logoColor=white)](https://chatgpt.com/)
+[![Jupyter Notebook](https://img.shields.io/badge/jupyter-%23FA0F00.svg?style=for-the-badge&logo=jupyter&logoColor=white)](https://jupyter.org/)
 
-##
+---------------------------------------------------------------------------------------------------------------------------------------------------
 [![Codeium](https://codeium.com/badges/main)](https://codeium.com)
 
