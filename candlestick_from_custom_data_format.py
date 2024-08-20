@@ -73,9 +73,9 @@ def plot_candlestick(df, ax):
 
 # Function to toggle volume bars
 def toggle_volume(event, volume_bars, toggle_button):
-    visible = volume_bars[0].get_visible()
+    visible = not volume_bars[0].get_visible()  # Toggle the current visibility state
     for bar in volume_bars:
-        bar.set_visible(not visible)
+        bar.set_visible(visible)
     toggle_button.label.set_text("Hide Volume" if visible else "Show Volume")
     plt.draw()
 
@@ -97,7 +97,7 @@ def create_plot(file_path):
 
     ax2 = ax.twinx()
     width_days = pd.Timedelta(seconds=4).total_seconds() / (60 * 60 * 24)
-    volume_bars = ax2.bar(mdates.date2num(df.index), df['Volume'], color='gray', alpha=0.3, width=width_days, visible=False)
+    volume_bars = ax2.bar(mdates.date2num(df.index), df['Volume'], color='gray', alpha=0.3, width=width_days, visible=False)  # Initially hidden
     ax2.set_ylabel('Volume')
 
     button_ax = plt.axes([0.85, 0.01, 0.1, 0.05])
