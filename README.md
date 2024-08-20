@@ -1,5 +1,5 @@
 # Stock Charts Demo
-This project provides a demo for generating Renko charts, a type of financial chart that uses price movement rather than standardized time intervals to create bars. This allows for a clear visualization of trends in stock prices.
+This project provides a demo for generating Stock charts.
 
 ## Table of Contents
 - [Project Overview](#project-overview)
@@ -9,8 +9,9 @@ This project provides a demo for generating Renko charts, a type of financial ch
 - [References](#reference)
 
 ## Project Overview
-Renko charts are a valuable tool for traders to filter out minor price movements and focus on larger trends. This demo aims to provide an easy-to-understand implementation of Renko charts using Python. 
-The project is inspired by the need to visualize stock price trends effectively, utilizing Python libraries such as `matplotlib` for the rendering of the charts.
+Charts used
+- Renko
+- Candlestick
 
 ## Installation
 
