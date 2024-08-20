@@ -4,27 +4,27 @@
 ## Conda related commads
 
 ### create a new environment
-conda create -n renko-chart-demo 
+conda create -n stock-charts-demo
 
 ### activate environment
-conda activate renko-chart-demo
+conda activate stock-charts-demo
 
 ### export configuration to a file
-conda env export > renko-chart-demo.yml
+conda env export > stock-charts-demo.yml
 
 ### create a new environment from config file
-conda env create  -f renko-chart-demo.yml
+conda env create  -f requirements.yml
 
 
 ## PIP related commads
 
 ### create a new environment
-windows: py -m venv .renko-chart-demo 
-unix/macOS: python3 -m venv .renko-chart-demo
+windows: py -m venv .stock-charts-demo 
+unix/macOS: python3 -m venv .stock-charts-demo
 
 ### activate environment
-windows: .venv/bin/python 
-unix/macOS: source .venv/bin/activate
+windows: .stock-charts-demo/bin/python 
+unix/macOS: source .stock-charts-demo/bin/activate
 
 ### verify environment
 windows: where python 
