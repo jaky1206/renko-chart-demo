@@ -88,8 +88,9 @@ Alternatively, you can use pip to set up the environment:
 3. [How to Create a Candlestick Chart in Matplotlib - A tutorial from GeeksforGeeks on creating financial charts using matplotlib.](https://www.geeksforgeeks.org/how-to-create-a-candlestick-chart-in-matplotlib)
 
 ##
-![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
-![Matplotlib](https://img.shields.io/badge/Matplotlib-%23ffffff.svg?style=for-the-badge&logo=Matplotlib&logoColor=black)
+[![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)](https://www.python.org/)
+[![Matplotlib](https://img.shields.io/badge/Matplotlib-%23ffffff.svg?style=for-the-badge&logo=Matplotlib&logoColor=black)](https://matplotlib.org/)
+[![ChatGPT](https://img.shields.io/badge/chatGPT-74aa9c?style=for-the-badge&logo=openai&logoColor=white)](https://chatgpt.com/)
 
 ##
 [![Codeium](https://codeium.com/badges/main)](https://codeium.com)
