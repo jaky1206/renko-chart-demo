@@ -54,7 +54,7 @@ for index, row in cleaned_data.iterrows():
         ax1.add_patch(rect)
 
         # Plot volume bars directly under each brick
-        bar = ax2.bar(position, row['Volume_Total'], color=color, edgecolor='black', alpha=0.5, width=1)  # Slightly less width for padding
+        bar = ax2.bar(position, row['Volume_Total'], color=color, edgecolor='black', alpha=0.5, width=1, align='edge')  # Slightly less width for padding
         volume_bars.append(bar)  # Store the volume bar
 
         # Increment position for the next brick
@@ -71,7 +71,7 @@ for index, row in cleaned_data.iterrows():
         ax1.add_patch(rect)
 
         # Plot volume bars directly under each brick
-        bar = ax2.bar(position-1, row['Volume_Total'], color=color, edgecolor='black', alpha=0.5, width=1)  # Slightly less width for padding
+        bar = ax2.bar(position-1, row['Volume_Total'], color=color, edgecolor='black', alpha=0.5, width=1, align='edge')  # Slightly less width for padding
         volume_bars.append(bar)  # Store the volume bar
         
 
