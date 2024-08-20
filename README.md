@@ -19,7 +19,7 @@ conda env create  -f renko-chart-demo.yml
 ## PIP related commads
 
 ### create a new environment
-windows: py -m venv .venv 
+windows: py -m venv .renko-chart-demo 
 unix/macOS: python3 -m venv .renko-chart-demo
 
 ### activate environment
