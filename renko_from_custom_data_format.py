@@ -22,7 +22,8 @@ cleaned_data['Time_Start'] = pd.to_datetime(cleaned_data['Time_Start'], format='
 
 # Set up the plot with two y-axes
 fig, ax1 = plt.subplots(figsize=(14, 7))
-plt.subplots_adjust(bottom=0.25)  # Adjust bottom for the slider
+plt.subplots_adjust(left=0.052, bottom=0.164, right=0.94, top=0.929, wspace=0.2, hspace=0.2)  # Adjust plot configuration to match the screenshot
+
 ax2 = ax1.twinx()  # Create a second y-axis to plot volume and indicators
 
 # Apply formatter to the volume axis
@@ -101,7 +102,7 @@ ax1.set_xticks(positions)
 ax1.set_xticklabels(cleaned_data['Time_Start'].dt.strftime('%H:%M:%S'), rotation=45, ha='right')
 
 # Add a slider for scrolling through the chart
-ax_slider = plt.axes([0.1, 0.1, 0.8, 0.03], facecolor='lightgoldenrodyellow')
+ax_slider = plt.axes([0.1, 0.02, 0.8, 0.03], facecolor='lightgoldenrodyellow')
 slider = Slider(ax_slider, 'Scroll', 0, max(positions) - 10, valinit=0, valstep=1)
 
 # Update function to control the visible range of the Renko chart
@@ -115,9 +116,9 @@ slider.on_changed(update)
 # Show grid
 # ax1.grid(True)
 
-# Add a button for showing/hiding the volume bars (positioned under the slider)
-ax_button = plt.axes([0.45, 0.02, 0.1, 0.04])  # Adjusted position
-button = Button(ax_button, 'Show Volume')
+# Add a button for showing/hiding the volume bars
+ax_button = plt.axes([0.8, 0.95, 0.1, 0.05])  # Move button a bit upward
+button = Button(ax_button, 'Show Volume', color='lightgoldenrodyellow')
 
 # Button click event handler
 volume_visible = False  # Track the visibility of the volume bars, start with hidden
