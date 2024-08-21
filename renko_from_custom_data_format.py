@@ -115,8 +115,8 @@ slider.on_changed(update)
 # Show grid
 # ax1.grid(True)
 
-# Add a button for showing/hiding the volume bars
-ax_button = plt.axes([0.8, 0.9, 0.1, 0.05])
+# Add a button for showing/hiding the volume bars (positioned under the slider)
+ax_button = plt.axes([0.45, 0.02, 0.1, 0.04])  # Adjusted position
 button = Button(ax_button, 'Show Volume')
 
 # Button click event handler
@@ -124,18 +124,34 @@ volume_visible = False  # Track the visibility of the volume bars, start with hi
 def toggle_volume(event):
     global volume_visible
     volume_visible = not volume_visible
+    
+    # Toggle visibility of the volume bars
     for bar in volume_bars:
         for rect in bar:
             rect.set_visible(volume_visible)
+    
+    # Toggle visibility of the right-side y-axis labels
+    ax2.get_yaxis().set_visible(volume_visible)
+    
+    # Update button label
     button.label.set_text('Show Volume' if not volume_visible else 'Hide Volume')
     fig.canvas.draw_idle()
 
-# Hide the volume bars initially
+# Hide the volume bars and the right-side labels initially
 for bar in volume_bars:
     for rect in bar:
         rect.set_visible(volume_visible)
+ax2.get_yaxis().set_visible(volume_visible)
 
 button.on_clicked(toggle_volume)
+
+# Update function to control the visible range of the Renko chart
+def update(val):
+    pos = int(slider.val)
+    ax1.set_xlim(pos, pos + 10)
+    fig.canvas.draw_idle()
+
+slider.on_changed(update)
 
 # Show the plot
 plt.show()
