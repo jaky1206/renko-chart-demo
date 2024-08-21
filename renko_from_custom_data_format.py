@@ -1,17 +1,12 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
-from matplotlib.ticker import FuncFormatter
-from matplotlib.widgets import Slider, Button
+from matplotlib.widgets import Slider
+import tkinter as tk
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 
 # constants
 DATE_FORMAT = '%m/%d/%Y %H:%M:%S'
-
-def format_volume(x, pos):
-    'The two args are the value and tick position'
-    if x >= 100000:
-        return f'{x*0.001:.0f}k'  # Convert to thousands for readability
-    return f'{x:.0f}'
 
 def load_and_clean_data(file_path):
     data = pd.read_csv(file_path)
@@ -24,7 +19,6 @@ def create_plot(cleaned_data):
     plt.subplots_adjust(left=0.052, bottom=0.164, right=0.94, top=0.929, wspace=0.2, hspace=0.2)
 
     ax2 = ax1.twinx()  # Create a second y-axis to plot volume and indicators
-    ax2.yaxis.set_major_formatter(FuncFormatter(format_volume))
 
     return fig, ax1, ax2
 
@@ -99,7 +93,6 @@ def set_time_labels(ax1, positions, time_labels):
     ax1.set_xticks(positions)
     ax1.set_xticklabels(time_labels, rotation=45, ha='right', fontsize=6)  # Adjust fontsize here
 
-
 def add_slider(ax1, fig, positions):
     ax_slider = plt.axes([0.1, 0.02, 0.8, 0.03], facecolor='lightgoldenrodyellow')
     slider = Slider(ax_slider, 'Scroll', 0, max(positions) - 10, valinit=0, valstep=1)
@@ -112,42 +105,75 @@ def add_slider(ax1, fig, positions):
     slider.on_changed(update)
     return slider
 
-def add_button(ax2, fig, volume_bars):
-    ax_button = plt.axes([0.8, 0.95, 0.1, 0.05])  # Move button a bit upward
-    button = Button(ax_button, 'Show Volume', color='lightgoldenrodyellow')
-
+def add_button(root, ax2, fig, volume_bars):
     volume_visible = False
 
-    def toggle_volume(event):
+    def toggle_volume():
         nonlocal volume_visible
         volume_visible = not volume_visible
         for bar in volume_bars:
             for rect in bar:
                 rect.set_visible(volume_visible)
         ax2.get_yaxis().set_visible(volume_visible)
-        button.label.set_text('Show Volume' if not volume_visible else 'Hide Volume')
+        button.config(text='Show Volume' if not volume_visible else 'Hide Volume')
         fig.canvas.draw_idle()
 
+        # Disable the button for 3 seconds
+        button.config(state=tk.DISABLED)
+        root.after(3000, lambda: button.config(state=tk.NORMAL))
+
+    # Create the button and keep it disabled initially
+    button = tk.Button(root, text='Show Volume', command=toggle_volume, state=tk.DISABLED)
+    button.pack(side=tk.TOP, pady=5)
+
+    # Initially hide the volume bars
     for bar in volume_bars:
         for rect in bar:
             rect.set_visible(volume_visible)
     ax2.get_yaxis().set_visible(volume_visible)
 
-    button.on_clicked(toggle_volume)
     return button
 
 def main():
     file_path = r'.\data\nq-aug-11-to-aug-16-2024-for-renko-parsed-m.csv'
     cleaned_data = load_and_clean_data(file_path)
+
+    # Create a Tkinter window
+    root = tk.Tk()
+    root.title("Renko Chart with Volume Control")
+
+    # Create the plot
     fig, ax1, ax2 = create_plot(cleaned_data)
     position, positions, volume_bars = plot_renko_and_volume(cleaned_data, ax1, ax2)
     plot_indicators(cleaned_data, ax1, ax2)
     set_axes_limits(ax1, ax2, cleaned_data, position)
     set_labels_and_titles(ax1, ax2)
     set_time_labels(ax1, positions, cleaned_data['Time_Start'].dt.strftime(DATE_FORMAT))
+
+    # Embed the Matplotlib figure in the Tkinter window
+    canvas = FigureCanvasTkAgg(fig, master=root)
+    canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+
+    # Add the Matplotlib toolbar for zoom, pan, etc.
+    toolbar = NavigationToolbar2Tk(canvas, root)
+    toolbar.update()
+    toolbar.pack(side=tk.TOP, fill=tk.X)
+
+    # Add the slider
     slider = add_slider(ax1, fig, positions)
-    button = add_button(ax2, fig, volume_bars)
-    plt.show()
+
+    # Link the button with the volume bars after the plot is created
+    button = add_button(root, ax2, fig, volume_bars)
+
+    # Function to enable the button once the plot is drawn
+    def enable_button(event):
+        button.config(state=tk.NORMAL)
+
+    # Connect the enable function to the canvas draw event
+    fig.canvas.mpl_connect('draw_event', enable_button)
+
+    # Start the Tkinter main loop
+    root.mainloop()
 
 if __name__ == "__main__":
     main()
