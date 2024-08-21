@@ -1,12 +1,12 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
-from matplotlib.widgets import Slider, Button
 from matplotlib.ticker import FuncFormatter
+from matplotlib.widgets import Slider, Button
 
 def format_volume(x, pos):
     'The two args are the value and tick position'
-    if x >= 1000:
+    if x >= 100000:
         return f'{x*0.001:.0f}k'  # Convert to thousands for readability
     return f'{x:.0f}'
 
@@ -73,12 +73,11 @@ for index, row in cleaned_data.iterrows():
         # Plot volume bars directly under each brick
         bar = ax2.bar(position-1, row['Volume_Total'], color=color, edgecolor='black', alpha=0.5, width=1, align='edge')  # Slightly less width for padding
         volume_bars.append(bar)  # Store the volume bar
-        
 
 # Plot additional indicators
 ax1.plot(data.index, data['Moving Average'], label='Moving Average', color='blue', linewidth=1)
 ax1.plot(data.index, data['Median'], label='Median', color='orange', linewidth=1)
-ax2.plot(data.index, data['Linear Regression'], label='Linear Regression (Volume)', color='purple', linewidth=1)
+ax2.plot(data.index, data['Linear Regression'], label='Linear Regression on Volume', color='purple', linewidth=1)
 
 # Set the limits for the axes
 ax1.set_xlim(0, position)
@@ -95,7 +94,7 @@ ax1.set_title('Renko Chart')
 ax2.set_ylabel('Volume')
 ax1.legend(loc='upper left')
 ax2.legend(loc='upper right')
-ax1.grid(True)
+ax1.grid(False)
 
 # Adjust x-axis to show time labels
 ax1.set_xticks(positions)
@@ -112,6 +111,9 @@ def update(val):
     fig.canvas.draw_idle()
 
 slider.on_changed(update)
+
+# Show grid
+# ax1.grid(True)
 
 # Add a button for showing/hiding the volume bars
 ax_button = plt.axes([0.8, 0.9, 0.1, 0.05])
@@ -134,9 +136,6 @@ for bar in volume_bars:
         rect.set_visible(volume_visible)
 
 button.on_clicked(toggle_volume)
-
-# Show grid
-# ax1.grid(True)
 
 # Show the plot
 plt.show()
