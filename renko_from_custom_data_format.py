@@ -4,6 +4,9 @@ import matplotlib.patches as patches
 from matplotlib.ticker import FuncFormatter
 from matplotlib.widgets import Slider, Button
 
+# constants
+DATE_FORMAT = '%m/%d/%Y %H:%M:%S'
+
 def format_volume(x, pos):
     'The two args are the value and tick position'
     if x >= 100000:
@@ -13,7 +16,7 @@ def format_volume(x, pos):
 def load_and_clean_data(file_path):
     data = pd.read_csv(file_path)
     cleaned_data = data.dropna(subset=['Time_Start'])
-    cleaned_data['Time_Start'] = pd.to_datetime(cleaned_data['Time_Start'], format='%H:%M:%S')
+    cleaned_data['Time_Start'] = pd.to_datetime(cleaned_data['Time_Start'], format=DATE_FORMAT)
     return cleaned_data
 
 def create_plot(cleaned_data):
@@ -74,18 +77,28 @@ def set_axes_limits(ax1, ax2, cleaned_data, position):
     ax2.set_ylim(0, cleaned_data['Volume_Total'].max() * 1.5)
 
 def set_labels_and_titles(ax1, ax2):
-    ax1.set_xlabel('Index')
-    ax1.set_ylabel('Price')
-    ax2.set_ylabel('Volume')
-    ax1.set_title('Renko Chart')
-    ax2.set_ylabel('Volume')
-    ax1.legend(loc='upper left')
-    ax2.legend(loc='upper right')
+    # Set label sizes
+    ax1.set_xlabel('Index', fontsize=10)
+    ax1.set_ylabel('Price', fontsize=10)
+    ax2.set_ylabel('Volume', fontsize=10)
+    ax1.set_title('Renko Chart', fontsize=12)
+    ax2.set_ylabel('Volume', fontsize=10)
+    
+    # Set legend sizes
+    ax1.legend(loc='upper left', fontsize=8)
+    ax2.legend(loc='upper right', fontsize=8)
+    
+    # Set tick label sizes
+    ax1.tick_params(axis='both', which='major', labelsize=8)
+    ax2.tick_params(axis='both', which='major', labelsize=8)
+    
+    # Disable grid lines
     ax1.grid(False)
 
 def set_time_labels(ax1, positions, time_labels):
     ax1.set_xticks(positions)
-    ax1.set_xticklabels(time_labels, rotation=45, ha='right')
+    ax1.set_xticklabels(time_labels, rotation=45, ha='right', fontsize=6)  # Adjust fontsize here
+
 
 def add_slider(ax1, fig, positions):
     ax_slider = plt.axes([0.1, 0.02, 0.8, 0.03], facecolor='lightgoldenrodyellow')
@@ -124,14 +137,14 @@ def add_button(ax2, fig, volume_bars):
     return button
 
 def main():
-    file_path = r'.\data\nq-aug-for-renko-parsed-m.csv'
+    file_path = r'.\data\nq-aug-11-to-aug-16-2024-for-renko-parsed-m.csv'
     cleaned_data = load_and_clean_data(file_path)
     fig, ax1, ax2 = create_plot(cleaned_data)
     position, positions, volume_bars = plot_renko_and_volume(cleaned_data, ax1, ax2)
     plot_indicators(cleaned_data, ax1, ax2)
     set_axes_limits(ax1, ax2, cleaned_data, position)
     set_labels_and_titles(ax1, ax2)
-    set_time_labels(ax1, positions, cleaned_data['Time_Start'].dt.strftime('%H:%M:%S'))
+    set_time_labels(ax1, positions, cleaned_data['Time_Start'].dt.strftime(DATE_FORMAT))
     slider = add_slider(ax1, fig, positions)
     button = add_button(ax2, fig, volume_bars)
     plt.show()
