@@ -1,12 +1,22 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
-from matplotlib.widgets import Slider
-import tkinter as tk
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
+import matplotlib.style as mplstyle
 
-# constants
+from matplotlib.ticker import FuncFormatter
+from matplotlib.widgets import Slider, Button
+
+# Constants
 DATE_FORMAT = '%m/%d/%Y %H:%M:%S'
+MPSTYLE = 'fast'
+
+# Use Matplotlib Fast Style
+mplstyle.use(MPSTYLE)
+
+def format_volume(x, pos):
+    if x >= 100000:
+        return f'{x*0.001:.0f}k'
+    return f'{x:.0f}'
 
 def load_and_clean_data(file_path):
     data = pd.read_csv(file_path)
@@ -14,50 +24,58 @@ def load_and_clean_data(file_path):
     cleaned_data['Time_Start'] = pd.to_datetime(cleaned_data['Time_Start'], format=DATE_FORMAT)
     return cleaned_data
 
-def create_plot(cleaned_data):
+def create_plot():
     fig, ax1 = plt.subplots(figsize=(14, 7))
     plt.subplots_adjust(left=0.052, bottom=0.164, right=0.94, top=0.929, wspace=0.2, hspace=0.2)
-
-    ax2 = ax1.twinx()  # Create a second y-axis to plot volume and indicators
-
+    ax2 = ax1.twinx()
+    ax2.yaxis.set_major_formatter(FuncFormatter(format_volume))
     return fig, ax1, ax2
 
-def plot_renko_and_volume(cleaned_data, ax1, ax2):
+def plot_renko_and_volume(cleaned_data, ax1, ax2, show_volume):
     position = 0
     positions = []
     volume_bars = []
+    brick_sizes = []
+
+    # Calculate the smallest brick size
+    smallest_brick_size = cleaned_data.apply(
+        lambda row: abs(row['Renko_Close'] - row['Renko_Open']), axis=1
+    ).min()
 
     for index, row in cleaned_data.iterrows():
         color = 'green' if row['Renko_Open'] < row['Renko_Close'] else 'red'
+        brick_size = abs(row['Renko_Close'] - row['Renko_Open'])
+        brick_sizes.append(brick_size)
         positions.append(position)
 
+        # Draw the main Renko bar
+        rect = patches.Rectangle(
+            (position, min(row['Renko_Open'], row['Renko_Close'])),
+            1,
+            brick_size,
+            linewidth=1,
+            edgecolor='black',
+            facecolor=color
+        )
+        ax1.add_patch(rect)
+        
+        # Draw internal black lines for larger bars
+        if brick_size % smallest_brick_size == 0 and brick_size > smallest_brick_size:
+            num_lines = brick_size // smallest_brick_size
+            for i in range(1, num_lines):
+                ax1.plot([position, position + 1], [min(row['Renko_Open'], row['Renko_Close']) + i * smallest_brick_size] * 2,
+                         color='black', linewidth=0.5)  # Draw internal black lines
+
         if row['Volume_Total'] != 0:
-            rect = patches.Rectangle(
-                (position, min(row['Renko_Open'], row['Renko_Close'])),  # Bottom-left corner
-                1,  # Uniform width
-                abs(row['Renko_Close'] - row['Renko_Open']),  # Height (price movement)
-                linewidth=1,
-                edgecolor='black',
-                facecolor=color
-            )
-            ax1.add_patch(rect)
             bar = ax2.bar(position, row['Volume_Total'], color=color, edgecolor='black', alpha=0.5, width=1, align='edge')
             volume_bars.append(bar)
-            position += 1
-        else:
-            rect = patches.Rectangle(
-                (position-1, min(row['Renko_Open'], row['Renko_Close'])),  # Bottom-left corner
-                1,  # Uniform width
-                abs(row['Renko_Close'] - row['Renko_Open']),  # Height (price movement)
-                linewidth=1,
-                edgecolor='black',
-                facecolor=color
-            )
-            ax1.add_patch(rect)
-            bar = ax2.bar(position-1, row['Volume_Total'], color=color, edgecolor='black', alpha=0.5, width=1, align='edge')
-            volume_bars.append(bar)
+            if not show_volume:
+                for rect in bar:
+                    rect.set_visible(False)
 
-    return position, positions, volume_bars
+        position += 1
+
+    return position, positions, volume_bars, brick_sizes
 
 def plot_indicators(data, ax1, ax2):
     ax1.plot(data.index, data['Moving Average'], label='Moving Average', color='blue', linewidth=1)
@@ -71,27 +89,21 @@ def set_axes_limits(ax1, ax2, cleaned_data, position):
     ax2.set_ylim(0, cleaned_data['Volume_Total'].max() * 1.5)
 
 def set_labels_and_titles(ax1, ax2):
-    # Set label sizes
-    ax1.set_xlabel('Index', fontsize=10)
+    ax1.set_xlabel('', fontsize=10)
     ax1.set_ylabel('Price', fontsize=10)
     ax2.set_ylabel('Volume', fontsize=10)
+    # move ylabel to right side
+    ax2.yaxis.set_label_position('right')
     ax1.set_title('Renko Chart', fontsize=12)
-    ax2.set_ylabel('Volume', fontsize=10)
-    
-    # Set legend sizes
     ax1.legend(loc='upper left', fontsize=8)
     ax2.legend(loc='upper right', fontsize=8)
-    
-    # Set tick label sizes
     ax1.tick_params(axis='both', which='major', labelsize=8)
     ax2.tick_params(axis='both', which='major', labelsize=8)
-    
-    # Disable grid lines
     ax1.grid(False)
 
 def set_time_labels(ax1, positions, time_labels):
     ax1.set_xticks(positions)
-    ax1.set_xticklabels(time_labels, rotation=45, ha='right', fontsize=6)  # Adjust fontsize here
+    ax1.set_xticklabels(time_labels, rotation=45, ha='right', fontsize=6)
 
 def add_slider(ax1, fig, positions):
     ax_slider = plt.axes([0.1, 0.02, 0.8, 0.03], facecolor='lightgoldenrodyellow')
@@ -105,75 +117,86 @@ def add_slider(ax1, fig, positions):
     slider.on_changed(update)
     return slider
 
-def add_button(root, ax2, fig, volume_bars):
-    volume_visible = False
+def update_plot(cleaned_data, ax1, ax2, slider, fig, show_volume):
+    ax1.clear()
+    ax2.clear()
+    plt.subplots_adjust(left=0.005, bottom=0.164, right=0.99, top=0.929, wspace=0.2, hspace=0.2)
 
-    def toggle_volume():
-        nonlocal volume_visible
-        volume_visible = not volume_visible
-        for bar in volume_bars:
-            for rect in bar:
-                rect.set_visible(volume_visible)
-        ax2.get_yaxis().set_visible(volume_visible)
-        button.config(text='Show Volume' if not volume_visible else 'Hide Volume')
-        fig.canvas.draw_idle()
-
-        # Disable the button for 3 seconds
-        button.config(state=tk.DISABLED)
-        root.after(3000, lambda: button.config(state=tk.NORMAL))
-
-    # Create the button and keep it disabled initially
-    button = tk.Button(root, text='Show Volume', command=toggle_volume, state=tk.DISABLED)
-    button.pack(side=tk.TOP, pady=5)
-
-    # Initially hide the volume bars
-    for bar in volume_bars:
-        for rect in bar:
-            rect.set_visible(volume_visible)
-    ax2.get_yaxis().set_visible(volume_visible)
-
-    return button
-
-def main():
-    file_path = r'.\data\nq-aug-11-to-aug-16-2024-for-renko-parsed-m.csv'
-    cleaned_data = load_and_clean_data(file_path)
-
-    # Create a Tkinter window
-    root = tk.Tk()
-    root.title("Renko Chart with Volume Control")
-
-    # Create the plot
-    fig, ax1, ax2 = create_plot(cleaned_data)
-    position, positions, volume_bars = plot_renko_and_volume(cleaned_data, ax1, ax2)
+    position, positions, volume_bars, brick_sizes = plot_renko_and_volume(cleaned_data, ax1, ax2, show_volume)
     plot_indicators(cleaned_data, ax1, ax2)
     set_axes_limits(ax1, ax2, cleaned_data, position)
     set_labels_and_titles(ax1, ax2)
     set_time_labels(ax1, positions, cleaned_data['Time_Start'].dt.strftime(DATE_FORMAT))
+    
+    if slider:
+        slider.valmax = max(positions) - 10  # Update the slider's max value
+        slider.ax.set_xlim(slider.valmin, slider.valmax)
+        slider.set_val(positions[0] if positions else 0)
+    
+    return positions, volume_bars
 
-    # Embed the Matplotlib figure in the Tkinter window
-    canvas = FigureCanvasTkAgg(fig, master=root)
-    canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
 
-    # Add the Matplotlib toolbar for zoom, pan, etc.
-    toolbar = NavigationToolbar2Tk(canvas, root)
-    toolbar.update()
-    toolbar.pack(side=tk.TOP, fill=tk.X)
+def add_button(ax2, fig, show_volume):
+    ax_button = plt.axes([0.8, 0.95, 0.1, 0.05])
+    button = Button(ax_button, 'Show Volume', color='lightgoldenrodyellow')
 
-    # Add the slider
+    def toggle_volume(event):
+        nonlocal show_volume
+        show_volume = not show_volume
+        for bar in ax2.containers:
+            for rect in bar:
+                rect.set_visible(show_volume)
+        ax2.get_yaxis().set_visible(show_volume)
+        button.label.set_text('Show Volume' if not show_volume else 'Hide Volume')
+        plt.subplots_adjust(right=0.95 if show_volume else 0.99)
+        fig.canvas.draw_idle()
+
+    button.on_clicked(toggle_volume)
+    return button
+
+def add_buttons(ax1, ax2, data1, data2, slider, fig, show_volume):
+    ax_button_forward = plt.axes([0.2, 0.95, 0.1, 0.05])
+    button_forward = Button(ax_button_forward, 'Forward', color='lightgoldenrodyellow')
+    ax_button_backward = plt.axes([0.1, 0.95, 0.1, 0.05])
+    button_backward = Button(ax_button_backward, 'Backward', color='lightgoldenrodyellow')
+
+    current_data = {'index': 0}
+
+    def toggle_data_forward(event):
+        current_data['index'] = (current_data['index'] + 1) % 2
+        datasets = [data1, data2]
+        positions, volume_bars = update_plot(datasets[current_data['index']], ax1, ax2, slider, fig, show_volume)
+        
+        if positions:
+            slider.set_val(positions[0])  # Reset slider to the beginning
+
+    def toggle_data_backward(event):
+        current_data['index'] = (current_data['index'] - 1) % 2
+        datasets = [data1, data2]
+        positions, volume_bars = update_plot(datasets[current_data['index']], ax1, ax2, slider, fig, show_volume)
+        
+        if positions:
+            slider.set_val(positions[0])  # Reset slider to the beginning
+
+    button_forward.on_clicked(toggle_data_forward)
+    button_backward.on_clicked(toggle_data_backward)
+    return button_backward, button_forward
+
+def main():
+    file_path1 = r'data\nq-aug-04-to-aug-09-2024-for-renko-parsed-l.txt'
+    file_path2 = r'data\nq-aug-11-to-aug-16-2024-for-renko-parsed-l.txt'
+
+    data1 = load_and_clean_data(file_path1)
+    data2 = load_and_clean_data(file_path2)
+    
+    cleaned_data = load_and_clean_data(file_path1)
+    fig, ax1, ax2 = create_plot()
+    positions, volume_bars = update_plot(cleaned_data, ax1, ax2, None, fig, False)
     slider = add_slider(ax1, fig, positions)
-
-    # Link the button with the volume bars after the plot is created
-    button = add_button(root, ax2, fig, volume_bars)
-
-    # Function to enable the button once the plot is drawn
-    def enable_button(event):
-        button.config(state=tk.NORMAL)
-
-    # Connect the enable function to the canvas draw event
-    fig.canvas.mpl_connect('draw_event', enable_button)
-
-    # Start the Tkinter main loop
-    root.mainloop()
+    toggle_button = add_button(ax2, fig, False)
+    backward_button, forward_button = add_buttons(ax1, ax2, data1, data2, slider, fig, False)
+    plt.show()
 
 if __name__ == "__main__":
     main()
+

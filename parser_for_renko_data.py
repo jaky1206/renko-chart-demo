@@ -4,7 +4,7 @@ from statsmodels.regression.linear_model import OLS
 from statsmodels.tools import add_constant
 
 # Load the data
-file_path = r'.\data\nq-aug-11-to-aug-16-2024-for-renko-m.csv'
+file_path = r'.\data\nq-aug-11-to-aug-16-2024-for-renko-l.txt'
 data = pd.read_csv(file_path)
 
 # Calculate moving average and median for the 'Volume_Total' column over a specified window
@@ -28,7 +28,7 @@ data['Linear Regression'] = results.predict(X).fillna(0).round(0).astype(int)
 data.drop(columns=['Intercept'], inplace=True)
 
 # Save the updated DataFrame back to csv (or Excel)
-output_file_path = r'.\data\nq-aug-11-to-aug-16-2024-for-renko-parsed-m.csv'
+output_file_path = r'.\data\nq-aug-11-to-aug-16-2024-for-renko-parsed-l.txt'
 data.to_csv(output_file_path, index=False)  # Save as CSV
 # data.to_excel(output_file_path.replace('.csv', '.xlsx'), index=False)  # Save as Excel if preferred
 
