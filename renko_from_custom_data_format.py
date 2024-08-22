@@ -80,7 +80,7 @@ def plot_renko_and_volume(cleaned_data, ax1, ax2, show_volume):
 def plot_indicators(data, ax1, ax2):
     ax1.plot(data.index, data['Moving Average'], label='Moving Average', color='blue', linewidth=1)
     ax1.plot(data.index, data['Median'], label='Median', color='orange', linewidth=1)
-    ax2.plot(data.index, data['Linear Regression'], label='Linear Regression on Volume', color='purple', linewidth=1)
+    # ax2.plot(data.index, data['Linear Regression'], label='Linear Regression on Volume', color='purple', linewidth=1)
 
 def set_axes_limits(ax1, ax2, cleaned_data, position):
     ax1.set_xlim(0, position)
@@ -90,8 +90,8 @@ def set_axes_limits(ax1, ax2, cleaned_data, position):
 
 def set_labels_and_titles(ax1, ax2):
     ax1.set_xlabel('', fontsize=10)
-    ax1.set_ylabel('Price', fontsize=10)
-    ax2.set_ylabel('Volume', fontsize=10)
+    ax1.set_ylabel('', fontsize=10)
+    ax2.set_ylabel('', fontsize=10)
     # move ylabel to right side
     ax2.yaxis.set_label_position('right')
     ax1.set_title('Renko Chart', fontsize=12)
@@ -120,7 +120,7 @@ def add_slider(ax1, fig, positions):
 def update_plot(cleaned_data, ax1, ax2, slider, fig, show_volume):
     ax1.clear()
     ax2.clear()
-    plt.subplots_adjust(left=0.005, bottom=0.164, right=0.99, top=0.929, wspace=0.2, hspace=0.2)
+    plt.subplots_adjust(left=0.048, bottom=0.164, right=0.99, top=0.930, wspace=0.2, hspace=0.2)
 
     position, positions, volume_bars, brick_sizes = plot_renko_and_volume(cleaned_data, ax1, ax2, show_volume)
     plot_indicators(cleaned_data, ax1, ax2)
@@ -132,8 +132,13 @@ def update_plot(cleaned_data, ax1, ax2, slider, fig, show_volume):
         slider.valmax = max(positions) - 10  # Update the slider's max value
         slider.ax.set_xlim(slider.valmin, slider.valmax)
         slider.set_val(positions[0] if positions else 0)
+
+    # Set tick visibility based on show_volume
+    ax2.get_yaxis().set_visible(show_volume)
+    ax2.tick_params(axis='y', labelsize=8 if show_volume else 0)  # Hide ticks when not visible
     
     return positions, volume_bars
+
 
 
 def add_button(ax2, fig, show_volume):
@@ -143,13 +148,26 @@ def add_button(ax2, fig, show_volume):
     def toggle_volume(event):
         nonlocal show_volume
         show_volume = not show_volume
+
         for bar in ax2.containers:
             for rect in bar:
                 rect.set_visible(show_volume)
+
+        # Control visibility of the y-axis label, ticks, and legend
         ax2.get_yaxis().set_visible(show_volume)
+        ax2.set_ylabel('Volume', fontsize=10 if show_volume else 0)  # Hide label text when not visible
+        ax2.tick_params(axis='y', which='both', labelsize=8 if show_volume else 0)  # Hide ticks when not visible
+        
+        if show_volume:
+            ax2.legend(loc='upper right', fontsize=8)  # Show legend
+        else:
+            ax2.legend_.remove()  # Hide legend
+
         button.label.set_text('Show Volume' if not show_volume else 'Hide Volume')
         plt.subplots_adjust(right=0.95 if show_volume else 0.99)
         fig.canvas.draw_idle()
+
+
 
     button.on_clicked(toggle_volume)
     return button
@@ -162,25 +180,26 @@ def add_buttons(ax1, ax2, data1, data2, slider, fig, show_volume):
 
     current_data = {'index': 0}
 
+    def update_plot_for_data(data):
+        nonlocal show_volume
+        positions, volume_bars = update_plot(data, ax1, ax2, slider, fig, show_volume)
+        if positions:
+            slider.set_val(positions[0])  # Reset slider to the beginning
+
     def toggle_data_forward(event):
         current_data['index'] = (current_data['index'] + 1) % 2
         datasets = [data1, data2]
-        positions, volume_bars = update_plot(datasets[current_data['index']], ax1, ax2, slider, fig, show_volume)
-        
-        if positions:
-            slider.set_val(positions[0])  # Reset slider to the beginning
+        update_plot_for_data(datasets[current_data['index']])
 
     def toggle_data_backward(event):
         current_data['index'] = (current_data['index'] - 1) % 2
         datasets = [data1, data2]
-        positions, volume_bars = update_plot(datasets[current_data['index']], ax1, ax2, slider, fig, show_volume)
-        
-        if positions:
-            slider.set_val(positions[0])  # Reset slider to the beginning
+        update_plot_for_data(datasets[current_data['index']])
 
     button_forward.on_clicked(toggle_data_forward)
     button_backward.on_clicked(toggle_data_backward)
     return button_backward, button_forward
+
 
 def main():
     file_path1 = r'data\nq-aug-04-to-aug-09-2024-for-renko-parsed-l.txt'
@@ -191,12 +210,13 @@ def main():
     
     cleaned_data = load_and_clean_data(file_path1)
     fig, ax1, ax2 = create_plot()
-    positions, volume_bars = update_plot(cleaned_data, ax1, ax2, None, fig, False)
+
+    show_volume = False
+    positions, volume_bars = update_plot(cleaned_data, ax1, ax2, None, fig, show_volume)
     slider = add_slider(ax1, fig, positions)
-    toggle_button = add_button(ax2, fig, False)
-    backward_button, forward_button = add_buttons(ax1, ax2, data1, data2, slider, fig, False)
+    toggle_button = add_button(ax2, fig, show_volume)  # Pass show_volume to the button
+    backward_button, forward_button = add_buttons(ax1, ax2, data1, data2, slider, fig, show_volume)
     plt.show()
 
 if __name__ == "__main__":
     main()
-
