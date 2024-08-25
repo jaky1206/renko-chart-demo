@@ -1,6 +1,5 @@
 import os
 import re
-
 import pandas as pd
 import plotly.graph_objects as go
 
@@ -8,11 +7,9 @@ dataframes = []
 file_paths = []
 current_index = 0
 
-
 def change_working_directory():
     script_directory = os.path.dirname(os.path.abspath(__file__))
     os.chdir(script_directory)
-
 
 def get_file_paths(directory):
     # Get all CSV files in the specified directory
@@ -24,19 +21,11 @@ def get_file_paths(directory):
 
     # Custom sorting logic
     def sort_key(filename):
-        # Check if "2023" is in the filename
         is_2023 = "2023" in filename
-
-        # Extract the digit following "M"
         match = re.search(r"M(\d+)", filename)
-        month_digit = (
-            int(match.group(1)) if match else float("inf")
-        )  # Use infinity as a fallback for unmatched cases
-
-        # Return tuple for sorting: (-is_2023 ensures 2023 files come first), then by month digit
+        month_digit = int(match.group(1)) if match else float("inf")
         return (-is_2023, month_digit)
 
-    # Sort the files based on the custom key
     sorted_files = sorted(all_files, key=sort_key)
     return sorted_files
 
@@ -55,7 +44,6 @@ def load_data(file_paths):
         dataframes.append(df)
     return dataframes
 
-
 def plot_data(index):
     df = dataframes[index]
     file_name = os.path.basename(file_paths[index])
@@ -63,7 +51,7 @@ def plot_data(index):
     # Create a figure
     fig = go.Figure()
 
-     # Generate colors for each bar
+    # Generate colors for each bar
     colors = ["green" if close >= open_ else "red" for close, open_ in zip(df["Renko_Close"], df["Renko_Open"])]
 
     # Add rectangles for Renko_Close and Renko_Open
@@ -73,10 +61,10 @@ def plot_data(index):
         base=df["Renko_Open"],
         name="Renko Close/Open",
         marker=dict(
-            color=colors,  # Assign colors list to marker color
-            line=dict(color='black', width=1)  # Set black border with a width of 1
+            color=colors,
+            line=dict(color='black', width=1)
         ),
-        width=1,  # Adjust the width to ensure rectangles are visible
+        width=1,
     ))
 
     # Define buttons for navigation
@@ -86,12 +74,12 @@ def plot_data(index):
             "method": "update",
             "args": [
                 {
-                    "x": [dataframes[(index - 1) % len(file_paths)]["Time_Start"]],
-                    "y": [dataframes[(index - 1) % len(file_paths)]["Renko_Close"] - dataframes[(index - 1) % len(file_paths)]["Renko_Open"]],
-                    "base": [dataframes[(index - 1) % len(file_paths)]["Renko_Open"]]
+                    "x": [dataframes[(current_index - 1) % len(file_paths)]["Time_Start"]],
+                    "y": [dataframes[(current_index - 1) % len(file_paths)]["Renko_Close"] - dataframes[(current_index - 1) % len(file_paths)]["Renko_Open"]],
+                    "base": [dataframes[(current_index - 1) % len(file_paths)]["Renko_Open"]]
                 },
                 {
-                    "title": f"File: {os.path.basename(file_paths[(index - 1) % len(file_paths)])}"
+                    "title": f"File: {os.path.basename(file_paths[(current_index - 1) % len(file_paths)])}"
                 }
             ]
         },
@@ -100,19 +88,19 @@ def plot_data(index):
             "method": "update",
             "args": [
                 {
-                    "x": [dataframes[(index + 1) % len(file_paths)]["Time_Start"]],
-                    "y": [dataframes[(index + 1) % len(file_paths)]["Renko_Close"] - dataframes[(index + 1) % len(file_paths)]["Renko_Open"]],
-                    "base": [dataframes[(index + 1) % len(file_paths)]["Renko_Open"]]
+                    "x": [dataframes[(current_index + 1) % len(file_paths)]["Time_Start"]],
+                    "y": [dataframes[(current_index + 1) % len(file_paths)]["Renko_Close"] - dataframes[(current_index + 1) % len(file_paths)]["Renko_Open"]],
+                    "base": [dataframes[(current_index + 1) % len(file_paths)]["Renko_Open"]]
                 },
                 {
-                    "title": f"File: {os.path.basename(file_paths[(index + 1) % len(file_paths)])}"
+                    "title": f"File: {os.path.basename(file_paths[(current_index + 1) % len(file_paths)])}"
                 }
             ]
         }
     ]
 
     fig.update_layout(
-        title=f"File: {file_name}",  # Add the initial title here
+        title=f"File: {file_name}",
         xaxis_title="Time Start",
         yaxis_title="Values",
         xaxis_tickangle=-45,
@@ -120,10 +108,10 @@ def plot_data(index):
             {
                 "type": "buttons",
                 "buttons": buttons,
-                "direction": "down",  # Display buttons vertically
+                "direction": "down",
                 "showactive": False,
-                "x": -0.1,  # Position buttons outside the plot area to the left
-                "y": 1,  # Position buttons at the top
+                "x": -0.1,
+                "y": 1,
                 "xanchor": "left",
                 "yanchor": "top",
             }
@@ -132,7 +120,7 @@ def plot_data(index):
             {
                 "text": f"Renko Chart",
                 "x": 0.5,
-                "y": 1.1,  # Position file name above the plot area
+                "y": 1.1,
                 "xref": "paper",
                 "yref": "paper",
                 "showarrow": False,
@@ -143,8 +131,6 @@ def plot_data(index):
     )
 
     fig.show()
-
-
 
 ######## END OF FUNCTIONS >>>>>>
 
