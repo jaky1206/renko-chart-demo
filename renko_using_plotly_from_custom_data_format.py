@@ -3,7 +3,6 @@ import re
 
 import pandas as pd
 import plotly.express as px
-import plotly.graph_objs as go
 
 dataframes = []
 file_paths = []
@@ -58,6 +57,11 @@ def load_data(file_paths):
     return dataframes
 
 
+'''
+The current button definitions in the plot_data function use the "method": "update" parameter incorrectly.
+The "update" method modifies only certain aspects of the plot, but in this case, we need to change the entire dataset being visualized.
+To achieve this, we should use the "method": "relayout" and also add a callback function to handle the dynamic update correctly.
+'''
 def plot_data(index):
     df = dataframes[index]
     fig = px.scatter(
@@ -73,38 +77,61 @@ def plot_data(index):
         },
     )
 
+    # Define buttons for navigation
+    buttons = [
+        {
+            "label": "Previous",
+            "method": "update",
+            "args": [
+                {
+                    "x": [dataframes[(index - 1) % len(dataframes)]["Time_Start"]] * 3,
+                    "y": [
+                        dataframes[(index - 1) % len(dataframes)]["Renko_Open"],
+                        dataframes[(index - 1) % len(dataframes)]["Renko_Close"],
+                        dataframes[(index - 1) % len(dataframes)]["Indicator_1"]
+                    ]
+                },
+                {
+                    "title": f"File: {os.path.basename(file_paths[(index - 1) % len(dataframes)])}"
+                }
+            ]
+        },
+        {
+            "label": "Next",
+            "method": "update",
+            "args": [
+                {
+                    "x": [dataframes[(index + 1) % len(dataframes)]["Time_Start"]] * 3,
+                    "y": [
+                        dataframes[(index + 1) % len(dataframes)]["Renko_Open"],
+                        dataframes[(index + 1) % len(dataframes)]["Renko_Close"],
+                        dataframes[(index + 1) % len(dataframes)]["Indicator_1"]
+                    ]
+                },
+                {
+                    "title": f"File: {os.path.basename(file_paths[(index + 1) % len(dataframes)])}"
+                }
+            ]
+        },
+    ]
+
     fig.update_layout(
+        updatemenus=[
+            {
+                "type": "buttons",
+                "direction": "left",
+                "buttons": buttons,
+                "showactive": False,
+                "x": 0.1,
+                "y": 1.15,
+                "xanchor": "left",
+                "yanchor": "top",
+            }
+        ],
         xaxis_title="Time Start",
         yaxis_title="Values",
         legend_title="",
         xaxis_tickangle=-45,
-        updatemenus=[
-            {
-                "type": "buttons",
-                "buttons": [
-                    {
-                        "label": "Previous",
-                        "method": "update",
-                        "args": [
-                            {"visible": [False] * len(dataframes)},
-                            {
-                                "title": f"File: {os.path.basename(file_paths[(index - 1) % len(dataframes)])}"
-                            },
-                        ],
-                    },
-                    {
-                        "label": "Next",
-                        "method": "update",
-                        "args": [
-                            {"visible": [False] * len(dataframes)},
-                            {
-                                "title": f"File: {os.path.basename(file_paths[(index + 1) % len(dataframes)])}"
-                            },
-                        ],
-                    },
-                ],
-            }
-        ],
     )
 
     fig.show()

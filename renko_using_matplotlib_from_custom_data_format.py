@@ -57,6 +57,12 @@ def load_data(file_paths):
     return dataframes
 
 
+'''
+The problem arises because we need to rotate the x-axis tick labels (xticklabels) properly each time the plot is updated.
+Using ax.set_xticklabels() directly without specifying tick labels can cause unintended formatting issues, especially with dates or time data.
+Instead, we should use plt.xticks(rotation=45) correctly to ensure the x-axis labels are tilted consistently, and avoid manually setting the y-axis tick labels unless needed.
+'''
+
 def plot_data(index):
     df = dataframes[index]
 
