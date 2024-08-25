@@ -65,7 +65,7 @@ def plot_data(index):
         x="Time_Start",
         y=["Renko_Open", "Renko_Close", "Indicator_1"],
         labels={"value": "Values", "variable": "Legend"},
-        title="",  # Set title to empty as we'll use annotation for the file name
+        title=f"File: {file_name}",
         color_discrete_map={
             "Renko_Open": "lightgray",
             "Renko_Close": "red",
@@ -86,6 +86,9 @@ def plot_data(index):
                         dataframes[(index - 1) % len(file_paths)]["Renko_Close"],
                         dataframes[(index - 1) % len(file_paths)]["Indicator_1"]
                     ]
+                },
+                {
+                    "title": f"File: {os.path.basename(file_paths[(index - 1) % len(file_paths)])}"
                 }
             ]
         },
@@ -100,6 +103,9 @@ def plot_data(index):
                         dataframes[(index + 1) % len(file_paths)]["Renko_Close"],
                         dataframes[(index + 1) % len(file_paths)]["Indicator_1"]
                     ]
+                },
+                {
+                    "title": f"File: {os.path.basename(file_paths[(index + 1) % len(file_paths)])}"
                 }
             ]
         }
@@ -124,7 +130,7 @@ def plot_data(index):
         ],
         annotations=[
             {
-                "text": f"File: {file_name}",
+                "text": f"Renko Chart",
                 "x": 0.5,
                 "y": 1.1,  # Position file name above the plot area
                 "xref": "paper",
