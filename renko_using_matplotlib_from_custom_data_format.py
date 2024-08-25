@@ -4,15 +4,14 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 from matplotlib.widgets import Button
+from matplotlib.patches import Rectangle
 
 dataframes = []
 current_index = 0
 
-
 def change_working_directory():
     script_directory = os.path.dirname(os.path.abspath(__file__))
     os.chdir(script_directory)
-
 
 def get_file_paths(directory):
     # Get all CSV files in the specified directory
@@ -40,7 +39,6 @@ def get_file_paths(directory):
     sorted_files = sorted(all_files, key=sort_key)
     return sorted_files
 
-
 def load_data(file_paths):
     for path in file_paths:
         df = pd.read_csv(
@@ -50,79 +48,61 @@ def load_data(file_paths):
                 "Renko_Open",
                 "Renko_Close",
                 "Volume",
-                "Indicator_1",
             ],
         )
         dataframes.append(df)
     return dataframes
-
-
-'''
-The problem arises because we need to rotate the x-axis tick labels (xticklabels) properly each time the plot is updated.
-Using ax.set_xticklabels() directly without specifying tick labels can cause unintended formatting issues, especially with dates or time data.
-Instead, we should use plt.xticks(rotation=45) correctly to ensure the x-axis labels are tilted consistently, and avoid manually setting the y-axis tick labels unless needed.
-'''
 
 def plot_data(index):
     df = dataframes[index]
 
     ax.clear()  # Clear the previous plot
 
-    # Plot Renko_Close as crosses
-    ax.scatter(
-        df["Time_Start"],
-        df["Renko_Open"],
-        color="lightgrey",
-        marker="o",
-        label="Renko Open",
-    )
+    # Convert 'Time_Start' to a numeric format for plotting
+    x_values = range(len(df))
+    ax.set_xticks(x_values)
+    ax.set_xticklabels(df["Time_Start"], rotation=45, ha='right')
 
-    # Plot Renko_Close as crosses
-    ax.scatter(
-        df["Time_Start"],
-        df["Renko_Close"],
-        color="red",
-        marker="x",
-        label="Renko Close",
-    )
+    # Plot Renko bars as rectangles
+    for i in range(len(df)):
+        x = x_values[i]
+        open_price = df["Renko_Open"].iloc[i]
+        close_price = df["Renko_Close"].iloc[i]
+        
+        # Draw a rectangle from Renko_Open to Renko_Close
+        rect = Rectangle(
+            (x - 0.4, min(open_price, close_price)),  # x - 0.4 centers the rectangle around x
+            1,  # Width of the rectangle
+            abs(open_price - close_price),
+            # if closes >= opens then green else red
+            color= 'green' if close_price >= open_price else 'red',
+            alpha=0.7,
+            edgecolor='black'
+        )
+        ax.add_patch(rect)
 
-    # Plot Indicator_1 as dots
-    ax.scatter(
-        df["Time_Start"],
-        df["Indicator_1"],
-        color="blue",
-        marker="o",
-        label="Indicator 1",
-    )
-
-    # Adding labels, title, and legend
+    # Set x-axis and y-axis labels
     ax.set_xlabel("Time Start")
     ax.set_ylabel("Values")
-
     ax.set_title(f"File: {os.path.basename(file_paths[index])}")
 
-    ax.legend()
-
-    # Rotate x-axis labels
-    plt.setp(ax.get_xticklabels(), rotation=45)
-
     # Adjust layout and display the plot
+    ax.set_xlim(-0.5, len(df) - 0.5)  # Ensure all rectangles fit within the plot area
+    ax.set_ylim(df[["Renko_Open", "Renko_Close"]].min().min() - 1,
+                df[["Renko_Open", "Renko_Close"]].max().max() + 1)  # Ensure all values fit within the plot area
+
     plt.tight_layout()
-
     fig.canvas.draw_idle()
-
 
 def next_plot(event):
     global current_index
     current_index = (current_index + 1) % len(dataframes)  # Loop back to the start
     plot_data(current_index)
 
-
 def prev_plot(event):
     global current_index
     current_index = (current_index - 1) % len(dataframes)  # Loop back to the end
     plot_data(current_index)
-
 
 ######## END OF FUNCTIONS >>>>>>
 

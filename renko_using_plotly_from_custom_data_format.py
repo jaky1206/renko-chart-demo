@@ -2,7 +2,7 @@ import os
 import re
 
 import pandas as pd
-import plotly.express as px
+import plotly.graph_objects as go
 
 dataframes = []
 file_paths = []
@@ -60,18 +60,24 @@ def plot_data(index):
     df = dataframes[index]
     file_name = os.path.basename(file_paths[index])
     
-    fig = px.scatter(
-        df,
-        x="Time_Start",
-        y=["Renko_Open", "Renko_Close", "Indicator_1"],
-        labels={"value": "Values", "variable": "Legend"},
-        title="",  # Set title to empty as we'll use annotation for the file name
-        color_discrete_map={
-            "Renko_Open": "lightgray",
-            "Renko_Close": "red",
-            "Indicator_1": "blue",
-        },
-    )
+    # Create a figure
+    fig = go.Figure()
+
+     # Generate colors for each bar
+    colors = ["green" if close >= open_ else "red" for close, open_ in zip(df["Renko_Close"], df["Renko_Open"])]
+
+    # Add rectangles for Renko_Close and Renko_Open
+    fig.add_trace(go.Bar(
+        x=df["Time_Start"],
+        y=df["Renko_Close"] - df["Renko_Open"],
+        base=df["Renko_Open"],
+        name="Renko Close/Open",
+        marker=dict(
+            color=colors,  # Assign colors list to marker color
+            line=dict(color='black', width=1)  # Set black border with a width of 1
+        ),
+        width=1,  # Adjust the width to ensure rectangles are visible
+    ))
 
     # Define buttons for navigation
     buttons = [
@@ -80,12 +86,12 @@ def plot_data(index):
             "method": "update",
             "args": [
                 {
-                    "x": [dataframes[(index - 1) % len(file_paths)]["Time_Start"]] * 3,
-                    "y": [
-                        dataframes[(index - 1) % len(file_paths)]["Renko_Open"],
-                        dataframes[(index - 1) % len(file_paths)]["Renko_Close"],
-                        dataframes[(index - 1) % len(file_paths)]["Indicator_1"]
-                    ]
+                    "x": [dataframes[(index - 1) % len(file_paths)]["Time_Start"]],
+                    "y": [dataframes[(index - 1) % len(file_paths)]["Renko_Close"] - dataframes[(index - 1) % len(file_paths)]["Renko_Open"]],
+                    "base": [dataframes[(index - 1) % len(file_paths)]["Renko_Open"]]
+                },
+                {
+                    "title": f"File: {os.path.basename(file_paths[(index - 1) % len(file_paths)])}"
                 }
             ]
         },
@@ -94,26 +100,25 @@ def plot_data(index):
             "method": "update",
             "args": [
                 {
-                    "x": [dataframes[(index + 1) % len(file_paths)]["Time_Start"]] * 3,
-                    "y": [
-                        dataframes[(index + 1) % len(file_paths)]["Renko_Open"],
-                        dataframes[(index + 1) % len(file_paths)]["Renko_Close"],
-                        dataframes[(index + 1) % len(file_paths)]["Indicator_1"]
-                    ]
+                    "x": [dataframes[(index + 1) % len(file_paths)]["Time_Start"]],
+                    "y": [dataframes[(index + 1) % len(file_paths)]["Renko_Close"] - dataframes[(index + 1) % len(file_paths)]["Renko_Open"]],
+                    "base": [dataframes[(index + 1) % len(file_paths)]["Renko_Open"]]
+                },
+                {
+                    "title": f"File: {os.path.basename(file_paths[(index + 1) % len(file_paths)])}"
                 }
             ]
         }
     ]
 
     fig.update_layout(
-	xaxis_title="Time Start",
+        xaxis_title="Time Start",
         yaxis_title="Values",
-        legend_title="",
         xaxis_tickangle=-45,
         updatemenus=[
             {
                 "type": "buttons",
-		"buttons": buttons,
+                "buttons": buttons,
                 "direction": "down",  # Display buttons vertically
                 "showactive": False,
                 "x": -0.1,  # Position buttons outside the plot area to the left
@@ -124,7 +129,7 @@ def plot_data(index):
         ],
         annotations=[
             {
-                "text": f"File: {file_name}",
+                "text": f"Renko Chart",
                 "x": 0.5,
                 "y": 1.1,  # Position file name above the plot area
                 "xref": "paper",
@@ -137,6 +142,7 @@ def plot_data(index):
     )
 
     fig.show()
+
 
 
 ######## END OF FUNCTIONS >>>>>>
