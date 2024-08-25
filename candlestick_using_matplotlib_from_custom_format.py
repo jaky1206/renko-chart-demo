@@ -113,4 +113,4 @@ def create_plot(file_path):
     plt.show()
 
 # Execute the main function
-create_plot(r'.\data\nq-aug-15-to-aug-16-2024-for-candlestick-m.txt')
+create_plot(r'.\data\custom-format\candlestick\nq-aug-15-to-aug-16-2024-for-candlestick-m.txt')
