@@ -58,38 +58,74 @@ def plot_data(index):
 
     ax.clear()  # Clear the previous plot
 
-    # Convert 'Time_Start' to a numeric format for plotting
-    x_values = range(len(df))
-    ax.set_xticks(x_values)
-    ax.set_xticklabels(df["Time_Start"], rotation=45, ha='right')
-
-    # Plot Renko bars as rectangles
+    x_position = 0  # Initialize x-axis position
+    brick_size = 10  # Define the brick size
+    current_y_position = df["Renko_Open"].iloc[0]  # Start at the first Renko open price
+    x_positions = []  # To track x positions for labeling
+    time_labels = []  # To track time labels for the x-axis
+    prev_row_renko_color = None
     for i in range(len(df)):
-        x = x_values[i]
         open_price = df["Renko_Open"].iloc[i]
         close_price = df["Renko_Close"].iloc[i]
-        
-        # Draw a rectangle from Renko_Open to Renko_Close
-        rect = Rectangle(
-            (x - 0.4, min(open_price, close_price)),  # x - 0.4 centers the rectangle around x
-            1,  # Width of the rectangle
-            abs(open_price - close_price),
-            # if closes >= opens then green else red
-            color= 'green' if close_price >= open_price else 'red',
-            alpha=0.7,
-            edgecolor='black'
-        )
-        ax.add_patch(rect)
+        difference = close_price - open_price
+
+        # Store the x_position and corresponding time label
+        if i == 0 or df["Time_Start"].iloc[i] != df["Time_Start"].iloc[i - 1]:
+            x_positions.append(x_position)
+            time_labels.append(df["Time_Start"].iloc[i])
+
+        # Determine the color of the brick
+        color = 'green' if close_price >= open_price else 'red'
+
+        # Handle larger movements by drawing multiple stacked bricks
+        if(i >0 and color != prev_row_renko_color):
+            if color == 'green':
+                current_y_position += brick_size
+            elif color == 'red':
+                current_y_position -= brick_size
+        while abs(difference) >= brick_size:
+            y_start = current_y_position
+            y_end = y_start + (brick_size if difference > 0 else -brick_size)
+            rect = Rectangle(
+                (x_position - 0.4, min(y_start, y_end)),
+                1,  # Width of the rectangle
+                brick_size,  # Height of the rectangle
+                color=color,
+                alpha=0.7,
+                edgecolor='black'
+            )
+            ax.add_patch(rect)
+            current_y_position = y_end  # Update the y-position for the next brick
+            difference = close_price - current_y_position
+
+        # Draw the remaining part of the brick, if any
+        if abs(difference) > 0:
+            y_start = current_y_position
+            y_end = close_price
+            rect = Rectangle(
+                (x_position - 0.4, min(y_start, y_end)),
+                1,  # Width of the rectangle
+                abs(y_end - y_start),  # Height of the rectangle
+                color=color,
+                alpha=0.7,
+                edgecolor='black'
+            )
+            ax.add_patch(rect)
+            current_y_position = y_end  # Update the y-position for the next brick
+        prev_row_renko_color = color
+        x_position += 1  # Move to the next x position for the next time interval
 
     # Set x-axis and y-axis labels
+    ax.set_xticks(x_positions)
+    ax.set_xticklabels(time_labels, rotation=45, ha='right')
     ax.set_xlabel("Time Start")
     ax.set_ylabel("Values")
     ax.set_title(f"File: {os.path.basename(file_paths[index])}")
 
     # Adjust layout and display the plot
-    ax.set_xlim(-0.5, len(df) - 0.5)  # Ensure all rectangles fit within the plot area
-    ax.set_ylim(df[["Renko_Open", "Renko_Close"]].min().min() - 1,
-                df[["Renko_Open", "Renko_Close"]].max().max() + 1)  # Ensure all values fit within the plot area
+    ax.set_xlim(-0.5, x_position - 0.5)  # Ensure all rectangles fit within the plot area
+    ax.set_ylim(df[["Renko_Open", "Renko_Close"]].min().min() - brick_size,
+                df[["Renko_Open", "Renko_Close"]].max().max() + brick_size)  # Ensure all values fit within the plot area
 
     plt.tight_layout()
     fig.canvas.draw_idle()
@@ -109,7 +145,7 @@ def prev_plot(event):
 change_working_directory()
 
 # Get the file paths from the "DATA" subdirectory
-file_paths = get_file_paths(r".\data\custom-format\renko")
+file_paths = get_file_paths(r"data\custom-format\renko")
 
 # Load all the data
 dataframes = load_data(file_paths)
