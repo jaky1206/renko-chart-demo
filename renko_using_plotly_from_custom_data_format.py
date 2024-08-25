@@ -76,7 +76,7 @@ def plot_data(index):
             color=colors,  # Assign colors list to marker color
             line=dict(color='black', width=1)  # Set black border with a width of 1
         ),
-        width=0.8,  # Adjust the width to ensure rectangles are visible
+        width=1,  # Adjust the width to ensure rectangles are visible
     ))
 
     # Define buttons for navigation

@@ -72,7 +72,7 @@ def plot_data(index):
         # Draw a rectangle from Renko_Open to Renko_Close
         rect = Rectangle(
             (x - 0.4, min(open_price, close_price)),  # x - 0.4 centers the rectangle around x
-            0.8,  # Width of the rectangle
+            1,  # Width of the rectangle
             abs(open_price - close_price),
             # if closes >= opens then green else red
             color= 'green' if close_price >= open_price else 'red',
