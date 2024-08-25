@@ -112,6 +112,7 @@ def plot_data(index):
     ]
 
     fig.update_layout(
+        title=f"File: {file_name}",  # Add the initial title here
         xaxis_title="Time Start",
         yaxis_title="Values",
         xaxis_tickangle=-45,
