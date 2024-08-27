@@ -1,8 +1,17 @@
 import os
 import re
-
 import pandas as pd
 import plotly.express as px
+
+# NEW: Modified for Renko plotting >> Start
+import dash
+
+from dash import Dash, dcc, html, Input, Output, State
+# NEW: Modified for Renko plotting >> End
+
+# Initialize Dash app
+app = Dash(__name__)
+# NEW: Modified for Renko plotting >> End
 
 dataframes = []
 file_paths = []
@@ -33,6 +42,9 @@ def get_file_paths(directory):
     return sorted_files
 
 def load_data(file_paths):
+    # NEW: Modified for Renko plotting >> Start
+    dataframes = []
+    # NEW: Modified for Renko plotting >> End
     for path in file_paths:
         df = pd.read_csv(path, usecols=['Time_Start', 'Renko_Open', 'Renko_Close', 'Volume', 'Indicator_1'])
         dataframes.append(df)
@@ -42,13 +54,12 @@ def load_data(file_paths):
 def plot_data(index):
     df = dataframes[index]
     file_name = os.path.basename(file_paths[index])
-    
+
     fig = px.scatter(
         df,
         x="Time_Start",
         y=["Renko_Open", "Renko_Close", "Indicator_1"],
         labels={"value": "Values", "variable": "Legend"},
-        title=f"File: {file_name}",
         color_discrete_map={
             "Renko_Open": "lightgray",
             "Renko_Close": "red",
@@ -56,77 +67,23 @@ def plot_data(index):
         },
     )
 
-    # Define buttons for navigation
-    buttons = [
-        {
-            "label": "Previous",
-            "method": "update",
-            "args": [
-                {
-                    "x": [dataframes[(index - 1) % len(file_paths)]["Time_Start"]] * 3,
-                    "y": [
-                        dataframes[(index - 1) % len(file_paths)]["Renko_Open"],
-                        dataframes[(index - 1) % len(file_paths)]["Renko_Close"],
-                        dataframes[(index - 1) % len(file_paths)]["Indicator_1"]
-                    ]
-                },
-                {
-                    "title": f"File: {os.path.basename(file_paths[(index - 1) % len(file_paths)])}"
-                }
-            ]
-        },
-        {
-            "label": "Next",
-            "method": "update",
-            "args": [
-                {
-                    "x": [dataframes[(index + 1) % len(file_paths)]["Time_Start"]] * 3,
-                    "y": [
-                        dataframes[(index + 1) % len(file_paths)]["Renko_Open"],
-                        dataframes[(index + 1) % len(file_paths)]["Renko_Close"],
-                        dataframes[(index + 1) % len(file_paths)]["Indicator_1"]
-                    ]
-                },
-                {
-                    "title": f"File: {os.path.basename(file_paths[(index + 1) % len(file_paths)])}"
-                }
-            ]
-        }
-    ]
-
     fig.update_layout(
-	xaxis_title="Time Start",
+        xaxis_title="Time Start",
         yaxis_title="Values",
         legend_title="",
         xaxis_tickangle=-45,
-        updatemenus=[
-            {
-                "type": "buttons",
-		        "buttons": buttons,
-                "direction": "down",  # Display buttons vertically
-                "showactive": False,
-                "x": -0.1,  # Position buttons outside the plot area to the left
-                "y": 1,  # Position buttons at the top
-                "xanchor": "left",
-                "yanchor": "top",
-            }
-        ],
-        annotations=[
-            {
-                "text": f"Renko Chart",
-                "x": 0.5,
-                "y": 1.1,  # Position file name above the plot area
-                "xref": "paper",
-                "yref": "paper",
-                "showarrow": False,
-                "font": {"size": 16},
-                "align": "center"
-            }
-        ],
+        autosize=True,
+        title={
+            'text': f"Scatter Plot",
+            'x': 0.5,  # Center the title horizontally
+            'xanchor': 'center',
+            'y': 0.95,  # Adjust the vertical position as needed
+            'yanchor': 'top'
+        }
     )
-    
-    fig.show()
-    
+
+    return fig
+
 # NEW: Modified for Renko plotting >> End
 
 ######## END OF FUNCTIONS >>>>>>
@@ -139,7 +96,51 @@ file_paths = get_file_paths('./data/custom-format/renko')
 # Load all the data
 dataframes = load_data(file_paths)
 
-print("loading graph")
+# NEW: Modified for Renko plotting >> Start
 
-# Plot the first dataset initially
-plot_data(current_index)
+# Define Dash layout with CSS for centering and resizing
+app.layout = html.Div([
+    html.Div([
+        dcc.Graph(
+            id='renko-plot',
+            style={'width': '100%', 'height': '100%'}
+        ),
+        html.Div(id='file-info', style={'textAlign': 'center', 'marginTop': '10px'})
+    ], style={'display': 'flex', 'flexDirection': 'column', 'alignItems': 'center', 'width': '100%', 'height': '90vh'}),
+    
+    html.Div([
+        html.Button('Previous', id='prev-button', n_clicks=0),
+        html.Button('Next', id='next-button', n_clicks=0)
+    ], style={'display': 'flex', 'justifyContent': 'center', 'marginTop': '20px'})
+], style={'display': 'flex', 'flexDirection': 'column', 'alignItems': 'center', 'height': '100vh'})
+
+# Define callback to update the graph based on button clicks
+@app.callback(
+    Output('renko-plot', 'figure'),
+    Output('file-info', 'children'),
+    Input('prev-button', 'n_clicks'),
+    Input('next-button', 'n_clicks'),
+    State('file-info', 'children')
+)
+def update_plot(prev_clicks, next_clicks, file_info):
+    global current_index
+    
+    ctx = dash.callback_context
+    if not ctx.triggered:
+        button_id = 'None'
+    else:
+        button_id = ctx.triggered[0]['prop_id'].split('.')[0]
+
+    if button_id == 'prev-button':
+        current_index = (current_index - 1) % len(file_paths)
+    elif button_id == 'next-button':
+        current_index = (current_index + 1) % len(file_paths)
+
+    fig = plot_data(current_index)
+    file_name = os.path.basename(file_paths[current_index])
+    return fig, f"Current file: {file_name}"
+
+if __name__ == '__main__':
+    app.run_server(debug=True)
+
+# NEW: Modified for Renko plotting >> End
