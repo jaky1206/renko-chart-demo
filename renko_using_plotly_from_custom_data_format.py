@@ -53,66 +53,103 @@ def load_data(file_paths):
 def plot_data(index):
     df = dataframes[index]
     file_name = os.path.basename(file_paths[index])
-
-    # Create a figure
+    
     fig = go.Figure()
 
-    # Generate colors for each bar
-    colors = ["green" if close >= open_ else "red" for close, open_ in zip(df["Renko_Close"], df["Renko_Open"])]
-
-    # Add Renko bars using Bar trace
+    # Generate colors and positions for each bar
+    colors = []
+    x_positions = []
+    y_starts = []
+    y_ends = []
+    brick_size = 10  # Define the brick size
+    current_y_position = df["Renko_Open"].iloc[0]  # Start at the first Renko open price
+    prev_row_renko_color = None
+    x_position = 0  # Initialize x-axis position
+    
+    # Loop through dataframe to create stacked rectangles
+    for i in range(len(df)):
+        open_price = df["Renko_Open"].iloc[i]
+        close_price = df["Renko_Close"].iloc[i]
+        difference = close_price - open_price
+        
+        # Determine the color of the brick
+        color = 'green' if close_price >= open_price else 'red'
+        
+        # Adjust current_y_position based on previous color if it changes
+        if i > 0 and color != prev_row_renko_color:
+            if color == 'green':
+                current_y_position += brick_size
+            elif color == 'red':
+                current_y_position -= brick_size
+        
+        while abs(difference) >= brick_size:
+            y_start = current_y_position
+            y_end = y_start + (brick_size if difference > 0 else -brick_size)
+            
+            colors.append(color)
+            x_positions.append(df["Time_Start"].iloc[i])
+            y_starts.append(min(y_start, y_end))
+            y_ends.append(max(y_start, y_end))
+            
+            current_y_position = y_end  # Update the y-position for the next brick
+            difference = close_price - current_y_position
+        
+        # Draw the remaining part of the brick, if any
+        if abs(difference) > 0:
+            y_start = current_y_position
+            y_end = close_price
+            
+            colors.append(color)
+            x_positions.append(df["Time_Start"].iloc[i])
+            y_starts.append(min(y_start, y_end))
+            y_ends.append(max(y_start, y_end))
+            
+            current_y_position = y_end  # Update the y-position for the next brick
+        
+        prev_row_renko_color = color
+        x_position += 1  # Move to the next x position for the next time interval
+    
+    # Add bars for Renko bricks
     fig.add_trace(go.Bar(
-        x=df["Time_Start"],
-        y=df["Renko_Close"] - df["Renko_Open"],
-        base=df["Renko_Open"],
-        name="Renko Close/Open",
+        x=x_positions,
+        y=[y_end - y_start for y_start, y_end in zip(y_starts, y_ends)],
+        base=y_starts,
         marker=dict(
             color=colors,
             line=dict(color='black', width=1)
         ),
         width=1,
-        yaxis='y1'  # Primary y-axis for Renko bars
+        name="Renko Bricks"
     ))
 
-    # Add Median line (primary y-axis)
-    fig.add_trace(go.Scatter(
-        x=df["Time_Start"],
-        y=df["Median"],
-        mode='lines',
-        name='Median',
-        line=dict(color='blue', width=2),
-        yaxis='y1'  # Primary y-axis
-    ))
-
-    # Add Moving Average line (primary y-axis)
+    # Plot Moving Average and Median
     fig.add_trace(go.Scatter(
         x=df["Time_Start"],
         y=df["Moving_Average"],
         mode='lines',
-        name='Moving Average',
-        line=dict(color='orange', width=2),
-        yaxis='y1'  # Primary y-axis
+        line=dict(color='blue', width=2),
+        name='Moving Average'
     ))
 
-    # Update layout to ensure all traces are visible without affecting the Renko bars
+    fig.add_trace(go.Scatter(
+        x=df["Time_Start"],
+        y=df["Median"],
+        mode='lines',
+        line=dict(color='orange', width=2),
+        name='Median'
+    ))
+
     fig.update_layout(
         xaxis_title="Time Start",
-        yaxis=dict(
-            title="Values",
-            side='left'
-        ),
-        legend=dict(
-            x=1,  # Adjust the position of the legend
-            y=1,
-            xanchor='left'
-        ),
+        yaxis_title="Values",
+        legend=dict(x=1, y=1, traceorder='normal'),
         xaxis_tickangle=-45,
         autosize=True,
         title={
-            'text': "Renko Chart with Median and Moving Average",
-            'x': 0.5,  # Center the title horizontally
+            'text': f"File: {file_name}",
+            'x': 0.5,
             'xanchor': 'center',
-            'y': 0.95,  # Adjust the vertical position as needed
+            'y': 0.95,
             'yanchor': 'top'
         }
     )
