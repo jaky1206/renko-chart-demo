@@ -146,11 +146,12 @@ def plot_data(index):
         xaxis_tickangle=-45,
         autosize=True,
         title={
-            'text': f"File: {file_name}",
+            'text': f'Renko Chart of {file_name}',
             'x': 0.5,
             'xanchor': 'center',
             'y': 0.95,
-            'yanchor': 'top'
+            'yanchor': 'top',
+            'font': {'size': 15}
         }
     )
 
@@ -164,7 +165,6 @@ change_working_directory()
 
 # Get the file paths from the "DATA" subdirectory
 file_paths = get_file_paths(r'./data/custom-format/renko-parsed')
-
 # Load all the data
 dataframes = load_data(file_paths)
 
@@ -173,31 +173,25 @@ dataframes = load_data(file_paths)
 # Define Dash layout with CSS for centering and resizing
 app.layout = html.Div([
     html.Div([
-        dcc.Graph(
-            id='renko-plot',
-            style={'width': '100%', 'height': '100%'}
-        ),
-        html.Div(id='file-info', style={'textAlign': 'center', 'marginTop': '10px'})
-    ], style={'display': 'flex', 'flexDirection': 'column', 'alignItems': 'center', 'width': '100%', 'height': '90vh'}),
-    
-    html.Div([
-        html.Button('Previous', id='prev-button', n_clicks=0),
+        html.Button('Previous', id='prev-button', n_clicks=0, style={'marginRight': '10px'}),
         html.Button('Next', id='next-button', n_clicks=0)
-    ], style={'display': 'flex', 'justifyContent': 'center', 'marginTop': '20px'})
+    ], style={'display': 'flex', 'justifyContent': 'center', 'marginTop': '20px'}),
+
+    dcc.Graph(
+        id='renko-plot',
+        style={'width': '100%', 'height': '100vh'}  # Adjust height as needed to use the remaining screen space
+    )
 ], style={'display': 'flex', 'flexDirection': 'column', 'alignItems': 'center', 'height': '100vh'})
 
 # Define callback to update the graph based on button clicks
 @app.callback(
     Output('renko-plot', 'figure'),
-    Output('file-info', 'children'),
-    Input('prev-button', 'n_clicks'),
-    Input('next-button', 'n_clicks'),
-    State('file-info', 'children')
+    [Input('prev-button', 'n_clicks'), Input('next-button', 'n_clicks')]
 )
-def update_plot(prev_clicks, next_clicks, file_info):
+def update_plot(prev_clicks, next_clicks):
     global current_index
-    
     ctx = dash.callback_context
+
     if not ctx.triggered:
         button_id = 'None'
     else:
@@ -209,8 +203,7 @@ def update_plot(prev_clicks, next_clicks, file_info):
         current_index = (current_index + 1) % len(file_paths)
 
     fig = plot_data(current_index)
-    file_name = os.path.basename(file_paths[current_index])
-    return fig, f"Current file: {file_name}"
+    return fig
 
 if __name__ == '__main__':
     app.run_server(debug=True)
