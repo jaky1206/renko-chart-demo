@@ -36,41 +36,45 @@ def get_file_paths(directory):
 
 def load_data(file_paths):
     for path in file_paths:
-        df = pd.read_csv(path, usecols=['Time_Start', 'Renko_Open', 'Renko_Close', 'Volume', 'Indicator_1'])
+        df = pd.read_csv(path, usecols=['Time_Start', 'Renko_Open', 'Renko_Close', 'Volume', 'Moving_Average', 'Median'])
         dataframes.append(df)
     return dataframes
 
 # NEW: Modified for Renko plotting >> Start 
 def plot_data(index):
     df = dataframes[index]
-
     ax.clear()  # Clear the previous plot
-
+    
     x_position = 0  # Initialize x-axis position
     brick_size = 10  # Define the brick size
     current_y_position = df["Renko_Open"].iloc[0]  # Start at the first Renko open price
     x_positions = []  # To track x positions for labeling
     time_labels = []  # To track time labels for the x-axis
     prev_row_renko_color = None
+
+    # Draw Moving Average and Median
+    ax.plot(df['Moving_Average'], label='Moving Average', color='blue', linewidth=2, linestyle='-')
+    ax.plot(df['Median'], label='Median', color='orange', linewidth=2, linestyle='-')
+
     for i in range(len(df)):
         open_price = df["Renko_Open"].iloc[i]
         close_price = df["Renko_Close"].iloc[i]
         difference = close_price - open_price
-
+        
         # Store the x_position and corresponding time label
         if i == 0 or df["Time_Start"].iloc[i] != df["Time_Start"].iloc[i - 1]:
             x_positions.append(x_position)
             time_labels.append(df["Time_Start"].iloc[i])
-
+        
         # Determine the color of the brick
         color = 'green' if close_price >= open_price else 'red'
-
+        
         # Handle larger movements by drawing multiple stacked bricks
-        if(i >0 and color != prev_row_renko_color):
+        if(i > 0 and color != prev_row_renko_color):
             if color == 'green':
                 current_y_position += brick_size
             elif color == 'red':
-                current_y_position -= brick_size
+                current_y_position -= brick_size        
         while abs(difference) >= brick_size:
             y_start = current_y_position
             y_end = y_start + (brick_size if difference > 0 else -brick_size)
@@ -85,7 +89,7 @@ def plot_data(index):
             ax.add_patch(rect)
             current_y_position = y_end  # Update the y-position for the next brick
             difference = close_price - current_y_position
-
+        
         # Draw the remaining part of the brick, if any
         if abs(difference) > 0:
             y_start = current_y_position
@@ -114,6 +118,9 @@ def plot_data(index):
     ax.set_xlim(-0.5, x_position - 0.5)  # Ensure all rectangles fit within the plot area
     ax.set_ylim(df[["Renko_Open", "Renko_Close"]].min().min() - brick_size,
                 df[["Renko_Open", "Renko_Close"]].max().max() + brick_size)  # Ensure all values fit within the plot area
+    
+    # Add legend
+    ax.legend(loc='upper left')
 
     plt.tight_layout()
     fig.canvas.draw_idle()
@@ -134,7 +141,7 @@ def prev_plot(event):
 change_working_directory()
 
 # Get the file paths from the "DATA" subdirectory
-file_paths = get_file_paths('./data/custom-format/renko')
+file_paths = get_file_paths(r'./data/custom-format/renko-parsed')
 
 # Load all the data
 dataframes = load_data(file_paths)
