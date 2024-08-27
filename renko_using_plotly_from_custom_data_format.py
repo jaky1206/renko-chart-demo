@@ -1,9 +1,18 @@
 import os
 import re
 import pandas as pd
-# NEW: Lib added >> Start
+
+# NEW: Modified for Renko plotting >> Start
 import plotly.graph_objects as go
-# NEW: Lib added >> End
+import dash
+
+from dash import Dash, dcc, html, Input, Output, State
+# NEW: Modified for Renko plotting >> End
+
+# Initialize Dash app
+app = Dash(__name__)
+# NEW: Modified for Renko plotting >> End
+
 dataframes = []
 file_paths = []
 current_index = 0
@@ -20,11 +29,11 @@ def get_file_paths(directory):
     def sort_key(filename):
         # Check if "2023" is in the filename
         is_2023 = "2023" in filename
-        
+
         # Extract the digit following "M"
         match = re.search(r'M(\d+)', filename)
         month_digit = int(match.group(1)) if match else float('inf')  # Use infinity as a fallback for unmatched cases
-        
+
         # Return tuple for sorting: (-is_2023 ensures 2023 files come first), then by month digit
         return (-is_2023, month_digit)
 
@@ -33,18 +42,19 @@ def get_file_paths(directory):
     return sorted_files
 
 def load_data(file_paths):
+    # NEW: Modified for Renko plotting >> Start
+    dataframes = []
+    # NEW: Modified for Renko plotting >> End
     for path in file_paths:
-        df = pd.read_csv(path, usecols=['Time_Start', 'Renko_Open', 'Renko_Close', 'Volume', 'Indicator_1'])
+        df = pd.read_csv(path, usecols=['Time_Start', 'Renko_Open', 'Renko_Close', 'Volume', 'Moving_Average', 'Median'])
         dataframes.append(df)
     return dataframes
 
 # NEW: Modified for Renko plotting >> Start
 def plot_data(index):
-    global current_index
-    current_index = index
     df = dataframes[index]
     file_name = os.path.basename(file_paths[index])
-    
+
     # Create a figure
     fig = go.Figure()
 
@@ -64,70 +74,23 @@ def plot_data(index):
         width=1,
     ))
 
-    # Define buttons for navigation
-    buttons = [
-        {
-            "label": "Previous",
-            "method": "update",
-            "args": [
-                {
-                    "x": [dataframes[(current_index - 1) % len(file_paths)]["Time_Start"]],
-                    "y": [dataframes[(current_index - 1) % len(file_paths)]["Renko_Close"] - dataframes[(current_index - 1) % len(file_paths)]["Renko_Open"]],
-                    "base": [dataframes[(current_index - 1) % len(file_paths)]["Renko_Open"]]
-                },
-                {
-                    "title": f"File: {os.path.basename(file_paths[(current_index - 1) % len(file_paths)])}"
-                }
-            ]
-        },
-        {
-            "label": "Next",
-            "method": "update",
-            "args": [
-                {
-                    "x": [dataframes[(current_index + 1) % len(file_paths)]["Time_Start"]],
-                    "y": [dataframes[(current_index + 1) % len(file_paths)]["Renko_Close"] - dataframes[(current_index + 1) % len(file_paths)]["Renko_Open"]],
-                    "base": [dataframes[(current_index + 1) % len(file_paths)]["Renko_Open"]]
-                },
-                {
-                    "title": f"File: {os.path.basename(file_paths[(current_index + 1) % len(file_paths)])}"
-                }
-            ]
-        }
-    ]
-
     fig.update_layout(
-        title=f"File: {file_name}",
         xaxis_title="Time Start",
         yaxis_title="Values",
+        legend_title="",
         xaxis_tickangle=-45,
-        updatemenus=[
-            {
-                "type": "buttons",
-                "buttons": buttons,
-                "direction": "down",
-                "showactive": False,
-                "x": -0.1,
-                "y": 1,
-                "xanchor": "left",
-                "yanchor": "top",
-            }
-        ],
-        annotations=[
-            {
-                "text": f"Renko Chart",
-                "x": 0.5,
-                "y": 1.1,
-                "xref": "paper",
-                "yref": "paper",
-                "showarrow": False,
-                "font": {"size": 16},
-                "align": "center"
-            }
-        ],
+        autosize=True,
+        title={
+            'text': f"Scatter Plot",
+            'x': 0.5,  # Center the title horizontally
+            'xanchor': 'center',
+            'y': 0.95,  # Adjust the vertical position as needed
+            'yanchor': 'top'
+        }
     )
 
-    fig.show()
+    return fig
+
 # NEW: Modified for Renko plotting >> End
 
 ######## END OF FUNCTIONS >>>>>>
@@ -135,12 +98,56 @@ def plot_data(index):
 change_working_directory()
 
 # Get the file paths from the "DATA" subdirectory
-file_paths = get_file_paths('./data/custom-format/renko')
+file_paths = get_file_paths(r'./data/custom-format/renko-parsed')
 
 # Load all the data
 dataframes = load_data(file_paths)
 
-print("loading graph")
+# NEW: Modified for Renko plotting >> Start
 
-# Plot the first dataset initially
-plot_data(current_index)
+# Define Dash layout with CSS for centering and resizing
+app.layout = html.Div([
+    html.Div([
+        dcc.Graph(
+            id='renko-plot',
+            style={'width': '100%', 'height': '100%'}
+        ),
+        html.Div(id='file-info', style={'textAlign': 'center', 'marginTop': '10px'})
+    ], style={'display': 'flex', 'flexDirection': 'column', 'alignItems': 'center', 'width': '100%', 'height': '90vh'}),
+    
+    html.Div([
+        html.Button('Previous', id='prev-button', n_clicks=0),
+        html.Button('Next', id='next-button', n_clicks=0)
+    ], style={'display': 'flex', 'justifyContent': 'center', 'marginTop': '20px'})
+], style={'display': 'flex', 'flexDirection': 'column', 'alignItems': 'center', 'height': '100vh'})
+
+# Define callback to update the graph based on button clicks
+@app.callback(
+    Output('renko-plot', 'figure'),
+    Output('file-info', 'children'),
+    Input('prev-button', 'n_clicks'),
+    Input('next-button', 'n_clicks'),
+    State('file-info', 'children')
+)
+def update_plot(prev_clicks, next_clicks, file_info):
+    global current_index
+    
+    ctx = dash.callback_context
+    if not ctx.triggered:
+        button_id = 'None'
+    else:
+        button_id = ctx.triggered[0]['prop_id'].split('.')[0]
+
+    if button_id == 'prev-button':
+        current_index = (current_index - 1) % len(file_paths)
+    elif button_id == 'next-button':
+        current_index = (current_index + 1) % len(file_paths)
+
+    fig = plot_data(current_index)
+    file_name = os.path.basename(file_paths[current_index])
+    return fig, f"Current file: {file_name}"
+
+if __name__ == '__main__':
+    app.run_server(debug=True)
+
+# NEW: Modified for Renko plotting >> End
