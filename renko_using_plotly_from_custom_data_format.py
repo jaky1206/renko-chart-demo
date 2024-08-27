@@ -7,7 +7,6 @@ import plotly.graph_objects as go
 import dash
 
 from dash import Dash, dcc, html, Input, Output, State
-# NEW: Modified for Renko plotting >> End
 
 # Initialize Dash app
 app = Dash(__name__)
@@ -61,7 +60,7 @@ def plot_data(index):
     # Generate colors for each bar
     colors = ["green" if close >= open_ else "red" for close, open_ in zip(df["Renko_Close"], df["Renko_Open"])]
 
-    # Add rectangles for Renko_Close and Renko_Open
+    # Add Renko bars using Bar trace
     fig.add_trace(go.Bar(
         x=df["Time_Start"],
         y=df["Renko_Close"] - df["Renko_Open"],
@@ -72,16 +71,53 @@ def plot_data(index):
             line=dict(color='black', width=1)
         ),
         width=1,
+        yaxis='y1'  # Primary y-axis for Renko bars
     ))
 
+    # Add Median line (secondary y-axis)
+    fig.add_trace(go.Scatter(
+        x=df["Time_Start"],
+        y=df["Median"],
+        mode='lines',
+        name='Median',
+        line=dict(color='blue', width=2),
+        yaxis='y2'  # Secondary y-axis
+    ))
+
+    # Add Moving Average line (secondary y-axis)
+    fig.add_trace(go.Scatter(
+        x=df["Time_Start"],
+        y=df["Moving_Average"],
+        mode='lines',
+        name='Moving Average',
+        line=dict(color='orange', width=2),
+        yaxis='y2'  # Secondary y-axis
+    ))
+
+    # Update layout to ensure all traces are visible without affecting the Renko bars
     fig.update_layout(
         xaxis_title="Time Start",
-        yaxis_title="Values",
-        legend_title="",
+        yaxis=dict(
+            title="Renko Values",
+            side='left'
+        ),
+        yaxis2=dict(
+            title="",
+            overlaying='y',  # Overlay y-axis 2 on y-axis 1
+            side='right',
+            showgrid=False,  # Hide gridlines for the secondary axis
+            zeroline=False,
+            showticklabels=False  # Hide tick labels for the secondary axis
+        ),
+        legend=dict(
+            x=1,  # Adjust the position of the legend
+            y=1,
+            xanchor='left'
+        ),
         xaxis_tickangle=-45,
         autosize=True,
         title={
-            'text': f"Scatter Plot",
+            'text': "Renko Chart with Median and Moving Average",
             'x': 0.5,  # Center the title horizontally
             'xanchor': 'center',
             'y': 0.95,  # Adjust the vertical position as needed
