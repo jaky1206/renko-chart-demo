@@ -74,40 +74,32 @@ def plot_data(index):
         yaxis='y1'  # Primary y-axis for Renko bars
     ))
 
-    # Add Median line (secondary y-axis)
+    # Add Median line (primary y-axis)
     fig.add_trace(go.Scatter(
         x=df["Time_Start"],
         y=df["Median"],
         mode='lines',
         name='Median',
         line=dict(color='blue', width=2),
-        yaxis='y2'  # Secondary y-axis
+        yaxis='y1'  # Primary y-axis
     ))
 
-    # Add Moving Average line (secondary y-axis)
+    # Add Moving Average line (primary y-axis)
     fig.add_trace(go.Scatter(
         x=df["Time_Start"],
         y=df["Moving_Average"],
         mode='lines',
         name='Moving Average',
         line=dict(color='orange', width=2),
-        yaxis='y2'  # Secondary y-axis
+        yaxis='y1'  # Primary y-axis
     ))
 
     # Update layout to ensure all traces are visible without affecting the Renko bars
     fig.update_layout(
         xaxis_title="Time Start",
         yaxis=dict(
-            title="Renko Values",
+            title="Values",
             side='left'
-        ),
-        yaxis2=dict(
-            title="",
-            overlaying='y',  # Overlay y-axis 2 on y-axis 1
-            side='right',
-            showgrid=False,  # Hide gridlines for the secondary axis
-            zeroline=False,
-            showticklabels=False  # Hide tick labels for the secondary axis
         ),
         legend=dict(
             x=1,  # Adjust the position of the legend
