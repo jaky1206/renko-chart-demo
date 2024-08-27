@@ -1,8 +1,9 @@
 import os
 import re
 import pandas as pd
+# NEW: Lib added >> Start
 import plotly.graph_objects as go
-
+# NEW: Lib added >> End
 dataframes = []
 file_paths = []
 current_index = 0
@@ -13,38 +14,34 @@ def change_working_directory():
 
 def get_file_paths(directory):
     # Get all CSV files in the specified directory
-    all_files = [
-        os.path.join(directory, file)
-        for file in os.listdir(directory)
-        if file.endswith(".csv")
-    ]
+    all_files = [os.path.join(directory, file) for file in os.listdir(directory) if file.endswith('.csv')]
 
     # Custom sorting logic
     def sort_key(filename):
+        # Check if "2023" is in the filename
         is_2023 = "2023" in filename
-        match = re.search(r"M(\d+)", filename)
-        month_digit = int(match.group(1)) if match else float("inf")
+        
+        # Extract the digit following "M"
+        match = re.search(r'M(\d+)', filename)
+        month_digit = int(match.group(1)) if match else float('inf')  # Use infinity as a fallback for unmatched cases
+        
+        # Return tuple for sorting: (-is_2023 ensures 2023 files come first), then by month digit
         return (-is_2023, month_digit)
 
+    # Sort the files based on the custom key
     sorted_files = sorted(all_files, key=sort_key)
     return sorted_files
 
 def load_data(file_paths):
     for path in file_paths:
-        df = pd.read_csv(
-            path,
-            usecols=[
-                "Time_Start",
-                "Renko_Open",
-                "Renko_Close",
-                "Volume",
-                "Indicator_1",
-            ],
-        )
+        df = pd.read_csv(path, usecols=['Time_Start', 'Renko_Open', 'Renko_Close', 'Volume', 'Indicator_1'])
         dataframes.append(df)
     return dataframes
 
+# NEW: Modified for Renko plotting >> Start
 def plot_data(index):
+    global current_index
+    current_index = index
     df = dataframes[index]
     file_name = os.path.basename(file_paths[index])
     
@@ -131,13 +128,14 @@ def plot_data(index):
     )
 
     fig.show()
+# NEW: Modified for Renko plotting >> End
 
 ######## END OF FUNCTIONS >>>>>>
 
 change_working_directory()
 
 # Get the file paths from the "DATA" subdirectory
-file_paths = get_file_paths(r".\data\custom-format\renko")
+file_paths = get_file_paths('./data/custom-format/renko')
 
 # Load all the data
 dataframes = load_data(file_paths)
