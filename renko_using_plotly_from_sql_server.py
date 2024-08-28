@@ -17,7 +17,7 @@ class DATASOURCE():
 
 # Constants
 BRICK_SIZE = 10  # Define the brick size
-SHOW_LEGENDS = True  # Set to True to show the legend
+SHOW_LEGENDS = False  # Set to True to show the legend
 DATA_SROUCE = DATASOURCE.SQL_SERVER
 COLUMN_LIST = ['Time_Start', 'Renko_Open', 'Renko_Close', 'Volume', 'Moving_Average', 'Median']
 
