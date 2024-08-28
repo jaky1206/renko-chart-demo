@@ -124,53 +124,52 @@ def plot_data(index):
         ),
         width=1,
         name="Renko Bricks",
-        showlegend=SHOW_LEGENDS
     ))
 
     # Plot Moving Average and Median
     fig.add_trace(go.Scatter(
         x=df["Time_Start"],
         y=df["Moving_Average"],
-        mode='lines',
+        mode='lines',  # Ensure it's lines-only
         line=dict(color='blue', width=2),
         name='Moving Average',
-        showlegend=SHOW_LEGENDS
     ))
 
     fig.add_trace(go.Scatter(
         x=df["Time_Start"],
         y=df["Median"],
-        mode='lines',
+        mode='lines',  # Ensure it's lines-only
         line=dict(color='orange', width=2),
         name='Median',
-        showlegend=SHOW_LEGENDS
     ))
 
     fig.update_layout(
-        xaxis_title="Time Start",
-        yaxis_title="Values",
-        yaxis=dict(
-            tickformat=',',  # Ensures thousands separator is displayed
-        ),
-        legend=dict(
+    xaxis_title="Time Start",
+    yaxis_title="",
+    showlegend=SHOW_LEGENDS,  # Disable the legend
+    legend=dict(
             orientation="h",  # Horizontal legend
             yanchor="top",
             y=1.2,
             xanchor="left",
             x=0,
-            # bgcolor='rgba(255, 255, 255, 0)',  # Optional: Transparent background for the legend
         ),
-        xaxis_tickangle=-45,
-        autosize=True,
-        title={
-            'text': f'Renko Chart of {file_name}',
-            'x': 0.5,
-            'xanchor': 'center',
-            'y': 0.95,
-            'yanchor': 'top',
-            'font': {'size': 15}
-        },
-    )
+    margin=dict(l=0, r=0, t=0, b=0),  # Remove margins
+    xaxis_tickangle=-45,
+    autosize=True,
+    title={
+        'text': f'Renko Chart of {file_name}',
+        'x': 0.5,
+        'xanchor': 'center',
+        'y': 0.98,  # Adjust this value to move the title higher
+        'yanchor': 'bottom',
+        'font': {'size': 15}  # Adjust font size as needed
+    },
+    yaxis=dict(
+            tickformat=',',  
+            tickmode='auto'  
+        )
+)
 
     return fig
 
