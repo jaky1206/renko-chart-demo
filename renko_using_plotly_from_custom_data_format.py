@@ -142,7 +142,17 @@ def plot_data(index):
     fig.update_layout(
         xaxis_title="Time Start",
         yaxis_title="Values",
-        legend=dict(x=1, y=1, traceorder='normal'),
+        yaxis=dict(
+            tickformat=',',  # Ensures thousands separator is displayed
+        ),
+        legend=dict(
+            orientation="h",  # Horizontal legend
+            yanchor="top",
+            y=1.2,
+            xanchor="left",
+            x=0,
+            # bgcolor='rgba(255, 255, 255, 0)',  # Optional: Transparent background for the legend
+        ),
         xaxis_tickangle=-45,
         autosize=True,
         title={
