@@ -8,6 +8,11 @@ import dash
 
 from dash import Dash, dcc, html, Input, Output, State
 
+# Constants
+DATAFRAME_COLUMN_NAMES = ['Time_Start', 'Renko_Open', 'Renko_Close', 'Volume', 'Moving_Average', 'Median']
+BRICK_SIZE = 10  # Define the brick size
+SHOW_LEGENDS = False  # Set to True to show the legend
+
 # Initialize Dash app
 app = Dash(__name__)
 # NEW: Modified for Renko plotting >> End
@@ -45,7 +50,9 @@ def load_data(file_paths):
     dataframes = []
     # NEW: Modified for Renko plotting >> End
     for path in file_paths:
-        df = pd.read_csv(path, usecols=['Time_Start', 'Renko_Open', 'Renko_Close', 'Volume', 'Moving_Average', 'Median'])
+        # NEW: Modified for Renko plotting >> Start
+        df = pd.read_csv(path, usecols=DATAFRAME_COLUMN_NAMES)
+        # NEW: Modified for Renko plotting >> End
         dataframes.append(df)
     return dataframes
 
@@ -61,7 +68,7 @@ def plot_data(index):
     x_positions = []
     y_starts = []
     y_ends = []
-    brick_size = 10  # Define the brick size
+    brick_size = BRICK_SIZE  # Define the brick size
     current_y_position = df["Renko_Open"].iloc[0]  # Start at the first Renko open price
     prev_row_renko_color = None
     x_position = 0  # Initialize x-axis position
@@ -119,7 +126,8 @@ def plot_data(index):
             line=dict(color='black', width=1)
         ),
         width=1,
-        name="Renko Bricks"
+        name="Renko Bricks",
+        showlegend=SHOW_LEGENDS
     ))
 
     # Plot Moving Average and Median
@@ -128,7 +136,8 @@ def plot_data(index):
         y=df["Moving_Average"],
         mode='lines',
         line=dict(color='blue', width=2),
-        name='Moving Average'
+        name='Moving Average',
+        showlegend=SHOW_LEGENDS
     ))
 
     fig.add_trace(go.Scatter(
@@ -136,7 +145,8 @@ def plot_data(index):
         y=df["Median"],
         mode='lines',
         line=dict(color='orange', width=2),
-        name='Median'
+        name='Median',
+        showlegend=SHOW_LEGENDS
     ))
 
     fig.update_layout(
@@ -162,7 +172,7 @@ def plot_data(index):
             'y': 0.95,
             'yanchor': 'top',
             'font': {'size': 15}
-        }
+        },
     )
 
     return fig
