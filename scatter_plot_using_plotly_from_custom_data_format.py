@@ -80,7 +80,11 @@ def plot_data(index):
             'y': 0.95,
             'yanchor': 'top',
             'font': {'size': 15}
-        }
+        },
+        yaxis=dict(
+            tickformat=',',  
+            tickmode='auto'  
+        )
     )
 
     return fig
@@ -92,7 +96,7 @@ def plot_data(index):
 change_working_directory()
 
 # Get the file paths from the "DATA" subdirectory
-file_paths = get_file_paths('./data/custom-format/renko')
+file_paths = get_file_paths(r'./data/custom-format/renko')
 
 # Load all the data
 dataframes = load_data(file_paths)
