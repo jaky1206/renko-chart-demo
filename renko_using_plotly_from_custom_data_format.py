@@ -9,7 +9,6 @@ import dash
 from dash import Dash, dcc, html, Input, Output, State
 
 # Constants
-DATAFRAME_COLUMN_NAMES = ['Time_Start', 'Renko_Open', 'Renko_Close', 'Volume', 'Moving_Average', 'Median']
 BRICK_SIZE = 10  # Define the brick size
 SHOW_LEGENDS = False  # Set to True to show the legend
 
@@ -50,9 +49,7 @@ def load_data(file_paths):
     dataframes = []
     # NEW: Modified for Renko plotting >> End
     for path in file_paths:
-        # NEW: Modified for Renko plotting >> Start
-        df = pd.read_csv(path, usecols=DATAFRAME_COLUMN_NAMES)
-        # NEW: Modified for Renko plotting >> End
+        df = pd.read_csv(path, usecols=['Time_Start', 'Renko_Open', 'Renko_Close', 'Volume', 'Moving_Average', 'Median'])
         dataframes.append(df)
     return dataframes
 
