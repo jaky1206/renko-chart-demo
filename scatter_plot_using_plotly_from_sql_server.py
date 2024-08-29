@@ -10,6 +10,7 @@ BRICK_SIZE = 10
 SHOW_LEGENDS = False  
 CURRENT_WEEK = 1  # Starting week number
 
+MSSQL_AUTHENTICATION_TYPE = "SQL"  # Set to "SQL" or "WINDOWS"
 MSSQL_SERVER_ADDRESS = "localhost"
 MSSQL_DATABASE = "TradingDB"
 MSSQL_USER_NAME = "sa"
@@ -18,14 +19,24 @@ MSSQL_ODBC_DRIVER = "ODBC Driver 18 for SQL Server"
 MSSQL_USE_TRUST_SERVER_CERTIFICATE = "yes"
 MSSQL_ENCRYPTION = "no"
 
-# Database connection
-DATABASE_URI = (
-    f"mssql+pyodbc://{MSSQL_USER_NAME}:{MSSQL_DATABASE_PASSWORD}@"
-    f"{MSSQL_SERVER_ADDRESS}/{MSSQL_DATABASE}?"
-    f"driver={MSSQL_ODBC_DRIVER}&"
-    f"Trusted_Connection={MSSQL_USE_TRUST_SERVER_CERTIFICATE}&"
-    f"Encrypt={MSSQL_ENCRYPTION}"
-)
+# Database URI Based on MSSQL_AUTHENTICATION_TYPE
+if MSSQL_AUTHENTICATION_TYPE == "SQL":
+    DATABASE_URI = (
+        f"mssql+pyodbc://{MSSQL_USER_NAME}:{MSSQL_DATABASE_PASSWORD}@"
+        f"{MSSQL_SERVER_ADDRESS}/{MSSQL_DATABASE}?"
+        f"driver={MSSQL_ODBC_DRIVER}&"
+        f"Trusted_Connection={MSSQL_USE_TRUST_SERVER_CERTIFICATE}&"
+        f"Encrypt={MSSQL_ENCRYPTION}"
+    )
+else:
+    DATABASE_URI = (
+        f"mssql+pyodbc://"
+        f"{MSSQL_SERVER_ADDRESS}/{MSSQL_DATABASE}?"
+        f"driver={MSSQL_ODBC_DRIVER}&"
+        f"Trusted_Connection={MSSQL_USE_TRUST_SERVER_CERTIFICATE}&"
+        f"Encrypt={MSSQL_ENCRYPTION}"
+    )
+
 engine = create_engine(DATABASE_URI)
 
 # Initialize Dash app
