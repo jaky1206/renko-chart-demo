@@ -9,6 +9,8 @@ import pyodbc
 
 from dash import Dash, dcc, html, Input, Output, State
 from datetime import datetime
+from sqlalchemy import create_engine, text
+from sqlalchemy.exc import SQLAlchemyError
 
 # make a static class
 class DATASOURCE():
@@ -21,12 +23,13 @@ SHOW_LEGENDS = False  # Set to True to show the legend
 DATA_SROUCE = DATASOURCE.SQL_SERVER
 COLUMN_LIST = ['Time_Start', 'Renko_Open', 'Renko_Close', 'Volume', 'Moving_Average', 'Median']
 
-# SQL Server connection details
-MSSQL_SERVER_ADDRESS = 'localhost'  # Your SQL Server name or address
-MSSQL_DATABASE = 'TradingDB'  # Your database name
-MSSQL_USER_NAME = 'sa'  # Your SQL Server username
-MSSQL_DATABASE_PASSWORD = 'orion123@'  # Your SQL Server password
-MSSQL_ODBC_DRIVER = '{ODBC Driver 18 for SQL Server}'  # ODBC driver
+MSSQL_SERVER_ADDRESS = "localhost"
+MSSQL_DATABASE = "TradingDB"
+MSSQL_USER_NAME = "sa"
+MSSQL_DATABASE_PASSWORD = "nopass"
+MSSQL_ODBC_DRIVER = "ODBC Driver 18 for SQL Server"
+MSSQL_USE_TRUST_SERVER_CERTIFICATE = "yes"
+MSSQL_ENCRYPTION = "no"
 
 # Initialize Dash app
 app = Dash(__name__)
@@ -39,18 +42,16 @@ current_index = 0
 # NEW: Modified for Renko plotting >> Start
 def get_sql_server_connection_string():
     return (
-            f'DRIVER={MSSQL_ODBC_DRIVER};'
-            f'SERVER={MSSQL_SERVER_ADDRESS};'
-            f'DATABASE={MSSQL_DATABASE};'
-            f'UID={MSSQL_USER_NAME};'
-            f'PWD={MSSQL_DATABASE_PASSWORD};'
-            'TrustServerCertificate=yes;'
+            f"mssql+pyodbc://{MSSQL_USER_NAME}:{MSSQL_DATABASE_PASSWORD}@"
+                f"{MSSQL_SERVER_ADDRESS}/{MSSQL_DATABASE}?"
+                f"driver={MSSQL_ODBC_DRIVER}&"
+                f"Trusted_Connection={MSSQL_USE_TRUST_SERVER_CERTIFICATE}&"
+                f"Encrypt={MSSQL_ENCRYPTION}"
         )
-
 
 def execute_query(query):
     """
-    Connects to SQL Server, executes the given query, and returns the results.
+    Connects to SQL Server using SQLAlchemy, executes the given query, and returns the results.
 
     Parameters:
     - query: SQL query string to be executed
@@ -58,37 +59,36 @@ def execute_query(query):
     Returns:
     - results: List of tuples containing the query results
     """
-    cnxn = None
-    cursor = None
+    engine = None
+    connection = None
 
     try:
-        # Create a connection string
-        connection_string = get_sql_server_connection_string()
+        # Create an SQLAlchemy engine
+        connection_string = get_sql_server_connection_string()  # Update this to your SQLAlchemy connection string
+        engine = create_engine(connection_string)
 
         # Connect to SQL Server
-        cnxn = pyodbc.connect(connection_string)
-        
-        # Create a cursor object
-        cursor = cnxn.cursor()
+        connection = engine.connect()
 
         # Execute the provided SQL query
-        cursor.execute(query)
-        
+        result_proxy = connection.execute(text(query))
+
         # Fetch data
-        results = cursor.fetchall()
-        
+        results = result_proxy.fetchall()
+
         return results
 
-    except pyodbc.Error as e:
+    except SQLAlchemyError as e:
         print(f"Error: {e}")
         return None
 
     finally:
-        # Clean up and close the cursor and connection
-        if cursor:
-            cursor.close()
-        if cnxn:
-            cnxn.close()
+        # Clean up and close the connection
+        if connection:
+            connection.close()
+        if engine:
+            engine.dispose()
+
 
 def get_list_from_database():
     # Define the query
@@ -137,9 +137,23 @@ def extract_week_info(week_str):
         # raise ValueError("The input string does not match the expected format")
         return None, None, None
 
+from sqlalchemy import create_engine
+from sqlalchemy.exc import SQLAlchemyError
+import pandas as pd
+
 def get_dataframe_from_sql_server(file_path):
-    # read week week start and week end from the csv file
+    """
+    Fetches data from SQL Server using SQLAlchemy and returns it as a pandas DataFrame.
+
+    Parameters:
+    - file_path: Path to the CSV file to extract week information.
+
+    Returns:
+    - DataFrame: A pandas DataFrame containing the query results.
+    """
+    # Read week start and week end dates from the CSV file
     week_no, week_start_date, week_end_date = extract_week_info(file_path)
+    
     # Define the query
     query = f"""
     SELECT
@@ -155,11 +169,25 @@ def get_dataframe_from_sql_server(file_path):
       AND [WeekNo] = {week_no}
     """
 
-    connection_string = get_sql_server_connection_string()
-    
-    cnxn = pyodbc.connect(connection_string)
+    try:
+        # Create an SQLAlchemy engine
+        connection_string = get_sql_server_connection_string()
+        engine = create_engine(connection_string)
+        
+        # Fetch data into a DataFrame
+        df = pd.read_sql(query, engine)
+        
+        return df
 
-    return pd.read_sql(query, cnxn)
+    except SQLAlchemyError as e:
+        print(f"Error: {e}")
+        return None
+
+    finally:
+        # Clean up and close the engine
+        if engine:
+            engine.dispose()
+
 # NEW: Modified for Renko plotting >> End
 
 def change_working_directory():
