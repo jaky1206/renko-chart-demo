@@ -5,9 +5,8 @@ import pandas as pd
 # NEW: Modified for Renko plotting >> Start
 import plotly.graph_objects as go
 import dash
-import pyodbc
 
-from dash import Dash, dcc, html, Input, Output, State
+from dash import Dash, dcc, html, Input, Output
 from datetime import datetime
 from sqlalchemy import create_engine, text
 from sqlalchemy.exc import SQLAlchemyError
