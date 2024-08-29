@@ -3,11 +3,12 @@ import re
 import pandas as pd
 import plotly.express as px
 
-# NEW: Modified for Renko plotting >> Start
 import dash
 
-from dash import Dash, dcc, html, Input, Output, State
-# NEW: Modified for Renko plotting >> End
+from dash import Dash, dcc, html, Input, Output
+
+DATA_DIRECTORY = r'./data/custom-format/renko-parsed'
+SHOW_LEGENDS = False
 
 # Initialize Dash app
 app = Dash(__name__)
@@ -19,89 +20,97 @@ current_index = 0
 
 def change_working_directory():
     script_directory = os.path.dirname(os.path.abspath(__file__))
-    os.chdir(script_directory)
+    os.chdir(script_directory) 
 
 def get_file_paths(directory):
     # Get all CSV files in the specified directory
     all_files = [os.path.join(directory, file) for file in os.listdir(directory) if file.endswith('.csv')]
-
+    
     # Custom sorting logic
     def sort_key(filename):
         # Check if "2023" is in the filename
         is_2023 = "2023" in filename
-
+        
         # Extract the digit following "M"
         match = re.search(r'M(\d+)', filename)
         month_digit = int(match.group(1)) if match else float('inf')  # Use infinity as a fallback for unmatched cases
-
+        
         # Return tuple for sorting: (-is_2023 ensures 2023 files come first), then by month digit
         return (-is_2023, month_digit)
-
+    
     # Sort the files based on the custom key
     sorted_files = sorted(all_files, key=sort_key)
     return sorted_files
 
 def load_data(file_paths):
-    # NEW: Modified for Renko plotting >> Start
+
     dataframes = []
-    # NEW: Modified for Renko plotting >> End
+
     for path in file_paths:
-        df = pd.read_csv(path, usecols=['Time_Start', 'Renko_Open', 'Renko_Close', 'Volume', 'Indicator_1'])
+        df = pd.read_csv(path, usecols=['Time_Start', 'Time_End', 'Renko_Open', 'Renko_Close', 'Volume', 'Moving_Average', 'Median'])
         dataframes.append(df)
     return dataframes
 
-# NEW: Modified for Renko plotting >> Start
 def plot_data(index):
     df = dataframes[index]
     file_name = os.path.basename(file_paths[index])
-
+    
     fig = px.scatter(
         df,
         x="Time_Start",
-        y=["Renko_Open", "Renko_Close", "Indicator_1"],
+        y=["Renko_Open", "Renko_Close", "Moving_Average", "Median"],
         labels={"value": "Values", "variable": "Legend"},
+        title=f"File: {file_name}",
         color_discrete_map={
             "Renko_Open": "lightgray",
             "Renko_Close": "red",
-            "Indicator_1": "blue",
+            "Moving_Average": "blue",
+            "Median": "orange"
         },
     )
 
     fig.update_layout(
         xaxis_title="Time Start",
-        yaxis_title="Values",
-        legend=dict(x=1, y=1, traceorder='normal'),
+        yaxis_title="",
+        showlegend=SHOW_LEGENDS,  # Disable the legend
+        margin=dict(l=0, r=0, t=0, b=0),
+        legend=dict(
+            orientation="h",  # Horizontal legend
+            yanchor="top",
+            y=1.2,
+            xanchor="left",
+            x=0,
+        ),
         xaxis_tickangle=-45,
         autosize=True,
         title={
             'text': f'Renko Chart of {file_name}',
             'x': 0.5,
             'xanchor': 'center',
-            'y': 0.95,
-            'yanchor': 'top',
-            'font': {'size': 15}
-        },
+            'y': 0.98,  # Adjust this value to move the title higher
+            'yanchor': 'bottom',
+            'font': {'size': 14}  # Adjust font size as needed
+            },
         yaxis=dict(
-            tickformat=',',  
-            tickmode='auto'  
-        )
+        tickformat=',',
+        tickmode='auto',
+        range=[df['Renko_Open'].min() * 0.98, df['Renko_Close'].max() * 1.02]  # Dynamically set y-axis range
+    )
     )
 
     return fig
-
-# NEW: Modified for Renko plotting >> End
 
 ######## END OF FUNCTIONS >>>>>>
 
 change_working_directory()
 
 # Get the file paths from the "DATA" subdirectory
-file_paths = get_file_paths(r'./data/custom-format/renko')
+file_paths = get_file_paths(DATA_DIRECTORY)
 
 # Load all the data
 dataframes = load_data(file_paths)
 
-# NEW: Modified for Renko plotting >> Start
+print("loading graph")
 
 # Define Dash layout with CSS for centering and resizing
 app.layout = html.Div([
