@@ -12,6 +12,7 @@ This project provides a demo for generating Stock charts.
 Charts used
 - Renko
 - Candlestick
+- Scatter Plot
 
 ## Installation
 
