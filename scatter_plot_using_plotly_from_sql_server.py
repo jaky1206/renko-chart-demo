@@ -6,8 +6,8 @@ from sqlalchemy import create_engine
 import plotly.express as px
 
 # Constants
-BRICK_SIZE = 10  # Define the brick size
-SHOW_LEGENDS = False  # Set to True to show the legend
+BRICK_SIZE = 10  
+SHOW_LEGENDS = False  
 CURRENT_WEEK = 1  # Starting week number
 
 MSSQL_SERVER_ADDRESS = "localhost"
@@ -61,7 +61,7 @@ def plot_data_for_week(week_no):
     # Replace 0 values in Renko_Open and Renko_Close with NaN
     df["Renko_Open"] = df["Renko_Open"].replace(0, np.nan)
     df["Renko_Close"] = df["Renko_Close"].replace(0, np.nan)
-    
+
     # Replace 0 values in Moving Average and Median with NaN
     moving_average = df["Moving_Average"].replace(0, np.nan)
     median = df["Median"].replace(0, np.nan)
@@ -82,30 +82,40 @@ def plot_data_for_week(week_no):
 
     # Update layout for better visualization
     fig.update_layout(
-    xaxis_title="Time Start",
-    yaxis_title="",
-    showlegend=SHOW_LEGENDS,  # Set to False to hide legend
-    margin=dict(l=0, r=0, t=0, b=0),  # Remove or reduce margins
-    xaxis_tickangle=-45,
-    autosize=True,
-    title={
-        'text': f'Renko Chart for Week {week_no} ({week_start_date} to {week_end_date})',
-        'x': 0.5,
-        'xanchor': 'center',
-        'y': 0.98,  # Adjust this value to move the title higher
-        'yanchor': 'bottom',
-        'font': {'size': 15}  # Adjust font size as needed
-    },
-    yaxis=dict(
-        tickformat=',',
-        tickmode='auto',
-        range=[df['Renko_Open'].min() * 0.98, df['Renko_Close'].max() * 1.02]  # Dynamically set y-axis range
-    ),
-    xaxis=dict(
-        rangemode="normal",  # This will ensure the axis fits the data points
-        autorange=True
+        xaxis_title="Time Start",
+        yaxis_title="",
+        showlegend=SHOW_LEGENDS,  # it is been set to False for now
+        legend=dict(
+            orientation="h",  # Horizontal legend
+            yanchor="top",
+            y=1.2,
+            xanchor="left",
+            x=0,
+        ),
+        margin=dict(l=0, r=0, t=0, b=0),  # Remove or reduce margins
+        xaxis_tickangle=-45,
+        autosize=True,
+        title={
+            "text": f"Renko Chart for Week {week_no} ({week_start_date} to {week_end_date})",
+            "x": 0.5,
+            "xanchor": "center",
+            "y": 0.98,  # Adjust this value to move the title higher
+            "yanchor": "bottom",
+            "font": {"size": 14},  # Adjust font size as needed
+        },
+        yaxis=dict(
+            tickformat=",",
+            tickmode="auto",
+            range=[
+                df["Renko_Open"].min() * 0.98,
+                df["Renko_Close"].max() * 1.02,
+            ],  # Dynamically set y-axis range
+        ),
+        xaxis=dict(
+            rangemode="normal",  # This will ensure the axis fits the data points
+            autorange=True,
+        ),
     )
-)
 
     return fig
 
