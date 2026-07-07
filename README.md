@@ -1,5 +1,5 @@
 # Stock Charts Demo
-This project provides a demo for generating Stock charts.
+This project provides a demo for generating Stock charts (Renko, Candlestick, Scatter Plot).
 
 ## Table of Contents
 - [Project Overview](#project-overview)
